@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { ArrowLeft, CreditCard, ShoppingBag, ShieldCheck, CheckCircle, ArrowRight, TableProperties, Clock, MessageSquare, Smartphone } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, CheckCircle, ArrowRight, TableProperties, Clock, MessageSquare, MapPin, Sparkles, Send } from 'lucide-react';
 import { motion } from 'motion/react';
 import { CartItem, Order } from '../types';
 import { getStoredOrders, saveStoredOrders } from '../services/cafeDataService';
@@ -10,6 +10,7 @@ interface CheckoutViewProps {
   onOrderSuccess: () => void;
   clearCart: () => void;
   triggerToast?: (message: string, type?: 'success' | 'info' | 'error') => void;
+  selectedLocation: 'abraka' | 'lagos';
 }
 
 export default function CheckoutView({
@@ -17,18 +18,20 @@ export default function CheckoutView({
   onBackToMenu,
   onOrderSuccess,
   clearCart,
-  triggerToast
+  triggerToast,
+  selectedLocation
 }: CheckoutViewProps) {
   // Input form state
-  const [diningType, setDiningType] = useState<'pickup' | 'dinein'>('dinein');
+  const [diningType, setDiningType] = useState<'pickup' | 'dinein' | 'delivery'>(
+    selectedLocation === 'lagos' ? 'delivery' : 'dinein'
+  );
   const [tableNumber, setTableNumber] = useState('');
   const [pickupTime, setPickupTime] = useState('12:00 PM');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryRegion, setDeliveryRegion] = useState(
+    selectedLocation === 'lagos' ? 'Lekki Phase 1' : 'Abraka Town'
+  );
   
-  const [cardName, setCardName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -46,7 +49,14 @@ export default function CheckoutView({
   });
 
   const cartSubtotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const taxesAndFees = cart.length > 0 ? 1500 : 0;
+  
+  // Delivery/Eco fees: Lagos gets 2500 delivery fee, Abraka gets 1000 for delivery, 0 for dine-in/pickup
+  const getFulfillmentFees = () => {
+    if (diningType !== 'delivery') return 500; // Small Eco fee
+    return selectedLocation === 'lagos' ? 2500 : 1000;
+  };
+  
+  const taxesAndFees = getFulfillmentFees();
   
   const getTipAmount = () => {
     if (tipType === '10%') return Math.round(cartSubtotal * 0.1);
@@ -62,17 +72,32 @@ export default function CheckoutView({
   const tipAmount = getTipAmount();
   const cartTotal = cartSubtotal + taxesAndFees + tipAmount;
 
+  // Compile and dispatch WhatsApp API Order
   const handlePlaceOrder = (e: FormEvent) => {
     e.preventDefault();
-    if (!customerName || !customerEmail || !cardName || !cardNumber) {
+    if (!customerName || !customerPhone) {
       if (triggerToast) {
-        triggerToast("Please fill out all contact and payment details to proceed.", "error");
+        triggerToast("Please enter your full name and WhatsApp phone number to proceed.", "error");
+      }
+      return;
+    }
+
+    if (diningType === 'dinein' && !tableNumber) {
+      if (triggerToast) {
+        triggerToast("Please enter your Table Number so our baristas can find you.", "error");
+      }
+      return;
+    }
+
+    if (diningType === 'delivery' && !deliveryAddress) {
+      if (triggerToast) {
+        triggerToast("Please enter your Delivery Address.", "error");
       }
       return;
     }
     
     // Generate order reference
-    const randomCode = `LUNA-${Math.floor(100 + Math.random() * 900)}`;
+    const randomCode = `LOLA-${Math.floor(100 + Math.random() * 900)}`;
     
     // Construct Order object
     const newOrder: Order = {
@@ -85,21 +110,69 @@ export default function CheckoutView({
       diningType: diningType,
       name: customerName,
       phone: customerPhone,
-      email: customerEmail,
+      email: customerEmail || 'guest@lolascafe.ng',
       status: 'pending',
       createdAt: new Date().toISOString()
     };
 
-    // Save to centralized local storage
+    // Save to centralized local storage (syncs with owner dashboard)
     const currentOrders = getStoredOrders();
     saveStoredOrders([...currentOrders, newOrder]);
+
+    // Build the beautiful WhatsApp message payload
+    const locationName = selectedLocation === 'abraka' ? "Delta State (Abraka Hub)" : "Lagos State Hub";
+    const contactLine = selectedLocation === 'abraka' ? "2349015704346" : "2349035504344";
+
+    const itemsText = cart.map(item => {
+      const modText = item.modifiers.length > 0 
+        ? `\n   └ _Modifiers: ${item.modifiers.map(m => m.name).join(', ')}_` 
+        : '';
+      return `• *${item.name}* x${item.quantity} (${formatter.format(item.total)})${modText}`;
+    }).join('\n');
+
+    let fulfillmentDetails = '';
+    if (diningType === 'dinein') {
+      fulfillmentDetails = `📍 *Dining Option:* Dine-In (Table Service)\n🪑 *Table Number:* ${tableNumber}`;
+    } else if (diningType === 'pickup') {
+      fulfillmentDetails = `📍 *Dining Option:* Store Pickup\n🕒 *Estimated Pickup Time:* ${pickupTime}`;
+    } else {
+      fulfillmentDetails = `📍 *Dining Option:* Home Delivery\n🏠 *Address:* ${deliveryAddress}\n🗺️ *Region:* ${deliveryRegion}`;
+    }
+
+    const divider = '=========================';
+    const whatsappText = 
+`🟢 *LOLA'S CAFE - ORDER DISPATCH* 🟢
+*Order Reference:* ${randomCode}
+*Service Hub:* ${locationName}
+${divider}
+
+👤 *Guest Name:* ${customerName}
+📱 *Phone:* ${customerPhone}
+${customerEmail ? `✉️ *Email:* ${customerEmail}\n` : ''}${fulfillmentDetails}
+
+${divider}
+🛒 *ORDER ITEMS:*
+${itemsText}
+
+${divider}
+💵 *FINANCIAL BREAKDOWN:*
+• Subtotal: ${formatter.format(cartSubtotal)}
+• ${diningType === 'delivery' ? 'Delivery Fee' : 'Eco/Barista Fee'}: ${formatter.format(taxesAndFees)}
+• Crew Appreciation Tip: ${formatter.format(tipAmount)}
+• *Grand Total:* *${formatter.format(cartTotal)}*
+
+Please confirm and prepare my order! 🌿`;
+
+    // Open WhatsApp directly
+    const whatsappUrl = `https://wa.me/${contactLine}?text=${encodeURIComponent(whatsappText)}`;
+    window.open(whatsappUrl, '_blank');
 
     setOrderCode(randomCode);
     setIsCompleted(true);
     clearCart();
 
     if (triggerToast) {
-      triggerToast(`Order Code ${randomCode} submitted successfully! Our Abuja CBD barista crew has received it.`, 'success');
+      triggerToast(`Order Code ${randomCode} dispatched to WhatsApp!`, 'success');
     }
   };
 
@@ -118,13 +191,21 @@ export default function CheckoutView({
           <div className="flex items-center gap-2">
             <button
               onClick={onBackToMenu}
-              className="text-on-surface-variant-cafe hover:text-primary-cafe p-2 -ml-2 rounded-full hover:bg-surface-variant-cafe/50 transition-colors flex items-center justify-center cursor-pointer"
+              className="text-on-surface-variant-cafe hover:text-primary-cafe p-2 -ml-2 rounded-full hover:bg-surface-variant-cafe/50 transition-colors flex items-center justify-center cursor-pointer font-bold text-xs uppercase tracking-wider"
             >
               <ArrowLeft className="w-5 h-5 mr-1" /> Back to Menu
             </button>
           </div>
 
-          <h1 className="font-display text-3xl md:text-4xl text-primary-cafe font-bold">Secure Checkout</h1>
+          <div className="space-y-1.5">
+            <span className="font-sans text-[10px] uppercase tracking-[0.2em] font-extrabold text-secondary-cafe flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-secondary-cafe animate-pulse" /> 
+              Instant WhatsApp Routing Enabled ({selectedLocation === 'abraka' ? 'Abraka Hub' : 'Lagos Hub'})
+            </span>
+            <h1 className="font-display text-3xl md:text-4xl text-primary-cafe font-black tracking-tight">
+              Lola's Direct Checkout
+            </h1>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             
@@ -133,11 +214,13 @@ export default function CheckoutView({
               
               {/* Contact Info */}
               <div className="bg-surface-container-lowest-cafe p-6 md:p-8 rounded-2xl border border-outline-cafe/15 shadow-sm space-y-6">
-                <h3 className="font-display text-lg text-primary-cafe font-bold border-b border-outline-cafe/10 pb-3">Contact Details</h3>
+                <h3 className="font-display text-lg text-primary-cafe font-bold border-b border-outline-cafe/10 pb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-secondary-cafe" /> Contact Details
+                </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Full Name</label>
+                    <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Your Full Name</label>
                     <input
                       type="text"
                       required
@@ -148,18 +231,7 @@ export default function CheckoutView({
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Email Address</label>
-                    <input
-                      type="email"
-                      required
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      placeholder="fatima@example.com"
-                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors focus:outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Phone Number</label>
+                    <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">WhatsApp Phone Number</label>
                     <input
                       type="tel"
                       required
@@ -170,136 +242,179 @@ export default function CheckoutView({
                     />
                   </div>
                 </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="fatima@example.com"
+                    className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors focus:outline-none"
+                  />
+                </div>
               </div>
 
               {/* Delivery / Dining Preference */}
               <div className="bg-surface-container-lowest-cafe p-6 md:p-8 rounded-2xl border border-outline-cafe/15 shadow-sm space-y-6">
-                <h3 className="font-display text-lg text-primary-cafe font-bold border-b border-outline-cafe/10 pb-3">Dining Option</h3>
+                <h3 className="font-display text-lg text-primary-cafe font-bold border-b border-outline-cafe/10 pb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-secondary-cafe" /> Fulfillment Option
+                </h3>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <label className={`p-4 rounded-xl border flex flex-col justify-between h-24 cursor-pointer transition-all ${
-                    diningType === 'dinein'
-                      ? 'bg-primary-container-cafe text-on-primary-container-cafe border-transparent ring-2 ring-primary-cafe'
-                      : 'bg-surface-cafe border-outline-cafe/15 text-primary-cafe hover:bg-surface-container-low-cafe'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="diningType"
-                      checked={diningType === 'dinein'}
-                      onChange={() => setDiningType('dinein')}
-                      className="sr-only"
-                    />
-                    <TableProperties className="w-5 h-5 shrink-0" />
-                    <span className="font-sans text-sm font-bold">Dine-In Table</span>
-                  </label>
+                {/* Dynamically filter dining options. Lagos gets Delivery only, Abraka gets all 3 */}
+                {selectedLocation === 'lagos' ? (
+                  <div className="p-4 rounded-xl border border-secondary-cafe/20 bg-secondary-cafe/5 flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-secondary-cafe shrink-0" />
+                    <div>
+                      <p className="font-sans text-sm font-bold text-primary-cafe">Lagos Doorstep Delivery Hub</p>
+                      <p className="font-sans text-xs text-on-surface-variant-cafe/90">Lagos State is delivery-only. Fresh dishes dispatched straight from our local cloud kitchens.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-3">
+                    <label className={`p-4 rounded-xl border flex flex-col justify-between h-24 cursor-pointer transition-all ${
+                      diningType === 'dinein'
+                        ? 'bg-primary-container-cafe text-on-primary-container-cafe border-transparent ring-2 ring-primary-cafe'
+                        : 'bg-surface-cafe border-outline-cafe/15 text-primary-cafe hover:bg-surface-container-low-cafe'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="diningType"
+                        checked={diningType === 'dinein'}
+                        onChange={() => setDiningType('dinein')}
+                        className="sr-only"
+                      />
+                      <TableProperties className="w-5 h-5 shrink-0" />
+                      <span className="font-sans text-xs font-bold leading-tight">Courtyard Dine-In</span>
+                    </label>
 
-                  <label className={`p-4 rounded-xl border flex flex-col justify-between h-24 cursor-pointer transition-all ${
-                    diningType === 'pickup'
-                      ? 'bg-primary-container-cafe text-on-primary-container-cafe border-transparent ring-2 ring-primary-cafe'
-                      : 'bg-surface-cafe border-outline-cafe/15 text-primary-cafe hover:bg-surface-container-low-cafe'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="diningType"
-                      checked={diningType === 'pickup'}
-                      onChange={() => setDiningType('pickup')}
-                      className="sr-only"
-                    />
-                    <Clock className="w-5 h-5 shrink-0" />
-                    <span className="font-sans text-sm font-bold">Store Pickup</span>
-                  </label>
-                </div>
+                    <label className={`p-4 rounded-xl border flex flex-col justify-between h-24 cursor-pointer transition-all ${
+                      diningType === 'pickup'
+                        ? 'bg-primary-container-cafe text-on-primary-container-cafe border-transparent ring-2 ring-primary-cafe'
+                        : 'bg-surface-cafe border-outline-cafe/15 text-primary-cafe hover:bg-surface-container-low-cafe'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="diningType"
+                        checked={diningType === 'pickup'}
+                        onChange={() => setDiningType('pickup')}
+                        className="sr-only"
+                      />
+                      <Clock className="w-5 h-5 shrink-0" />
+                      <span className="font-sans text-xs font-bold leading-tight">Store Pickup</span>
+                    </label>
 
-                {diningType === 'dinein' ? (
-                  <div className="flex flex-col gap-2 pt-2">
+                    <label className={`p-4 rounded-xl border flex flex-col justify-between h-24 cursor-pointer transition-all ${
+                      diningType === 'delivery'
+                        ? 'bg-primary-container-cafe text-on-primary-container-cafe border-transparent ring-2 ring-primary-cafe'
+                        : 'bg-surface-cafe border-outline-cafe/15 text-primary-cafe hover:bg-surface-container-low-cafe'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="diningType"
+                        checked={diningType === 'delivery'}
+                        onChange={() => setDiningType('delivery')}
+                        className="sr-only"
+                      />
+                      <MapPin className="w-5 h-5 shrink-0" />
+                      <span className="font-sans text-xs font-bold leading-tight">Home Delivery</span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Conditional Inputs based on dining selection */}
+                {diningType === 'dinein' && (
+                  <div className="flex flex-col gap-2 pt-2 animate-fadeIn">
                     <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Table Number (If already seated)</label>
                     <input
                       type="text"
+                      required
                       value={tableNumber}
                       onChange={(e) => setTableNumber(e.target.value)}
                       placeholder="e.g. Table 4"
-                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors"
+                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors focus:outline-none"
                     />
                   </div>
-                ) : (
-                  <div className="flex flex-col gap-2 pt-2">
+                )}
+
+                {diningType === 'pickup' && (
+                  <div className="flex flex-col gap-2 pt-2 animate-fadeIn">
                     <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Estimated Pickup Time</label>
                     <input
                       type="text"
+                      required
                       value={pickupTime}
                       onChange={(e) => setPickupTime(e.target.value)}
                       placeholder="e.g. 1:15 PM"
-                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors"
+                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors focus:outline-none"
                     />
+                  </div>
+                )}
+
+                {diningType === 'delivery' && (
+                  <div className="space-y-4 pt-2 animate-fadeIn">
+                    <div className="flex flex-col gap-2">
+                      <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Street Address</label>
+                      <input
+                        type="text"
+                        required
+                        value={deliveryAddress}
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        placeholder="e.g. Block 12, Admiralty Way / Ekrejeta St."
+                        className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Area / Neighborhood</label>
+                      {selectedLocation === 'lagos' ? (
+                        <select
+                          value={deliveryRegion}
+                          onChange={(e) => setDeliveryRegion(e.target.value)}
+                          className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe focus:outline-none"
+                        >
+                          <option value="Lekki Phase 1" className="bg-surface-cafe">Lekki Phase 1</option>
+                          <option value="Ikoyi" className="bg-surface-cafe">Ikoyi</option>
+                          <option value="Victoria Island" className="bg-surface-cafe">Victoria Island</option>
+                          <option value="Ikeja GRA" className="bg-surface-cafe">Ikeja GRA</option>
+                          <option value="Surulere" className="bg-surface-cafe">Surulere</option>
+                          <option value="Yaba" className="bg-surface-cafe">Yaba</option>
+                        </select>
+                      ) : (
+                        <select
+                          value={deliveryRegion}
+                          onChange={(e) => setDeliveryRegion(e.target.value)}
+                          className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe focus:outline-none"
+                        >
+                          <option value="Abraka Town" className="bg-surface-cafe">Abraka Town</option>
+                          <option value="Ekrejeta" className="bg-surface-cafe">Ekrejeta Area</option>
+                          <option value="Site I Campus" className="bg-surface-cafe">Site I Campus</option>
+                          <option value="Site II Campus" className="bg-surface-cafe">Site II Campus</option>
+                          <option value="Site III Campus" className="bg-surface-cafe">Site III Campus</option>
+                          <option value="Police Station Area" className="bg-surface-cafe">Police Station Area</option>
+                        </select>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Payment Details */}
-              <div className="bg-surface-container-lowest-cafe p-6 md:p-8 rounded-2xl border border-outline-cafe/15 shadow-sm space-y-6">
-                <div className="flex justify-between items-baseline border-b border-outline-cafe/10 pb-3">
-                  <h3 className="font-display text-lg text-primary-cafe font-bold">Payment details</h3>
-                  <span className="text-[10px] bg-secondary-container-cafe/20 text-secondary-cafe px-2 py-0.5 rounded font-sans uppercase font-bold tracking-wider flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Secured
-                  </span>
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Name on Card</label>
-                  <input
-                    type="text"
-                    required
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    placeholder="Fatima Ali"
-                    className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Card Number</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      placeholder="•••• •••• •••• ••••"
-                      maxLength={19}
-                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 pl-8 pr-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors"
-                    />
-                    <CreditCard className="w-4 h-4 text-outline-cafe/50 absolute left-0 top-3.5" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-2">
-                    <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">Expiry Date</label>
-                    <input
-                      type="text"
-                      required
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      placeholder="MM/YY"
-                      maxLength={5}
-                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant-cafe">CVV Code</label>
-                    <input
-                      type="password"
-                      required
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value)}
-                      placeholder="•••"
-                      maxLength={3}
-                      className="w-full bg-transparent border-0 border-b border-outline-cafe/30 focus:border-secondary-cafe focus:ring-0 px-0 py-2.5 font-sans text-sm text-primary-cafe placeholder-outline-cafe/30 transition-colors"
-                    />
-                  </div>
-                </div>
+              {/* No credit cards block! Clear and beautiful instruction. */}
+              <div className="p-6 rounded-2xl border border-green-600/20 bg-green-950/10 text-left space-y-3">
+                <h4 className="font-display text-sm font-bold text-green-700 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-green-700" /> Direct WhatsApp Checkout
+                </h4>
+                <p className="font-sans text-xs text-on-surface-variant-cafe/90 leading-relaxed">
+                  Lola's Cafe skips complex merchant gateway fees and credit card storage risks. Clicking the button below compiles your order and instantly launches WhatsApp to send details directly to our closest kitchen station. You can coordinate cash on delivery, bank transfers, or walk-in payment options!
+                </p>
               </div>
 
+              <button
+                type="submit"
+                className="w-full bg-green-700 text-white rounded-xl py-4 shadow-lg hover:bg-green-800 transition-all flex justify-center items-center gap-2 font-sans font-bold tracking-widest uppercase text-xs cursor-pointer"
+                style={{ boxShadow: '0 8px 24px rgba(38,124,47,0.15)' }}
+              >
+                <MessageSquare className="w-4 h-4" /> Place Order via WhatsApp &bull; {formatter.format(cartTotal)}
+              </button>
             </form>
 
             {/* Order Review panel (Right) */}
@@ -384,7 +499,7 @@ export default function CheckoutView({
                     <span>{formatter.format(cartSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-on-surface-variant-cafe">
-                    <span>Eco Taxes &amp; Fees</span>
+                    <span>Fulfillment Fee</span>
                     <span>{formatter.format(taxesAndFees)}</span>
                   </div>
                   {tipAmount > 0 && (
@@ -398,16 +513,8 @@ export default function CheckoutView({
                     <span className="text-secondary-cafe font-extrabold">{formatter.format(cartTotal)}</span>
                   </div>
                 </div>
-
               </div>
 
-              <button
-                onClick={handlePlaceOrder}
-                className="w-full bg-primary-cafe text-on-primary rounded-xl py-4 shadow-lg hover:bg-primary-container-cafe transition-all flex justify-center items-center gap-2 font-sans font-semibold tracking-wider uppercase text-xs cursor-pointer"
-                style={{ boxShadow: '0 8px 24px rgba(38,66,47,0.15)' }}
-              >
-                Place Order <ArrowRight className="w-4 h-4" />
-              </button>
             </div>
 
           </div>
@@ -417,28 +524,28 @@ export default function CheckoutView({
         /* CONFIRMED SCREEN */
         <div className="max-w-xl mx-auto text-center py-12 md:py-20 space-y-10 animate-fadeIn">
           
-          <div className="w-20 h-20 rounded-full bg-primary-container-cafe text-on-primary flex items-center justify-center shadow-lg shadow-primary-container-cafe/20 mx-auto">
+          <div className="w-20 h-20 rounded-full bg-green-700 text-white flex items-center justify-center shadow-lg shadow-green-700/20 mx-auto">
             <CheckCircle className="w-11 h-11 text-white stroke-[2.5px]" />
           </div>
 
           <div className="space-y-3">
             <h1 className="font-display text-4xl md:text-5xl text-primary-cafe font-bold leading-tight">
-              Thank You for Your Order!
+              Order Sent to WhatsApp!
             </h1>
             <p className="font-sans text-sm text-on-surface-variant-cafe">
-              Order Reference:{' '}
+              Your temporary checkout reference:{' '}
               <span className="font-sans text-sm font-bold text-secondary-cafe tracking-widest uppercase">
                 {orderCode}
               </span>
             </p>
           </div>
 
-          <div className="bg-surface-container-lowest-cafe border border-outline-cafe/15 rounded-xl p-8 space-y-6 shadow-sm">
+          <div className="bg-surface-container-lowest-cafe border border-outline-cafe/15 rounded-xl p-8 space-y-6 shadow-sm text-left">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="flex flex-col">
-                <span className="font-sans text-[10px] uppercase tracking-wider text-on-surface-variant-cafe font-bold mb-1">Method</span>
+                <span className="font-sans text-[10px] uppercase tracking-wider text-on-surface-variant-cafe font-bold mb-1">Fulfillment</span>
                 <span className="font-sans text-sm font-semibold text-primary-cafe capitalize">
-                  {diningType === 'dinein' ? 'Table Service' : 'Store Pickup'}
+                  {diningType === 'dinein' ? 'Courtyard Service' : diningType === 'pickup' ? 'Store Pickup' : 'Home Delivery'}
                 </span>
                 {diningType === 'dinein' && tableNumber && (
                   <span className="font-sans text-xs text-secondary-cafe font-bold mt-0.5">{tableNumber}</span>
@@ -446,92 +553,33 @@ export default function CheckoutView({
                 {diningType === 'pickup' && pickupTime && (
                   <span className="font-sans text-xs text-secondary-cafe font-bold mt-0.5">At {pickupTime}</span>
                 )}
+                {diningType === 'delivery' && deliveryAddress && (
+                  <span className="font-sans text-xs text-secondary-cafe font-bold mt-0.5 truncate max-w-full" title={deliveryAddress}>{deliveryRegion}</span>
+                )}
               </div>
               <div className="flex flex-col border-l border-outline-cafe/15">
-                <span className="font-sans text-[10px] uppercase tracking-wider text-on-surface-variant-cafe font-bold mb-1">Preparation</span>
-                <span className="font-sans text-sm font-semibold text-primary-cafe">Ready in 15-20 mins</span>
+                <span className="font-sans text-[10px] uppercase tracking-wider text-on-surface-variant-cafe font-bold mb-1">Lola's Hub Support</span>
+                <span className="font-sans text-sm font-semibold text-primary-cafe">
+                  {selectedLocation === 'abraka' ? '09015704346' : '09035504344'}
+                </span>
               </div>
             </div>
 
-            <div className="border-t border-outline-cafe/10 pt-4 flex justify-between items-center text-sm font-sans text-on-surface-variant-cafe">
-              <span>Total Paid (Eco Fees Included)</span>
-              <span className="font-bold text-secondary-cafe">{formatter.format(cartTotal)}</span>
-            </div>
-          </div>
-
-          {/* FREE SMS / WHATSAPP RECEIPT DESK */}
-          <div className="bg-surface-container-low-cafe border border-outline-cafe/20 rounded-2xl p-6 text-left space-y-4">
-            <div>
-              <h3 className="font-display text-base font-bold text-primary-cafe flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-secondary-cafe animate-pulse" />
-                Secure Your Digital Receipt &bull; 100% Free
-              </h3>
-              <p className="font-sans text-xs text-on-surface-variant-cafe/80 mt-1 leading-relaxed">
-                Receive your order receipt instantly. This compiles your full order breakdown and opens it pre-filled inside your device's native WhatsApp or SMS application, avoiding any expensive gateway service fees.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <button
-                onClick={() => {
-                  const phone = customerPhone.replace(/\D/g, '');
-                  let cleanNum = phone;
-                  if (phone.startsWith('0') && phone.length === 11) {
-                    cleanNum = '234' + phone.slice(1);
-                  } else if (phone.length === 10 && !phone.startsWith('234')) {
-                    cleanNum = '234' + phone;
-                  }
-                  
-                  const itemsText = cart.map(item => `• ${item.name} x${item.quantity}`).join('\n');
-                  const border = '---------------------------';
-                  const msg = `☕ *LUNA CAFE ABUJA* ☕\n*Order Receipt:* ${orderCode}\n${border}\n👤 *Guest:* ${customerName}\n📱 *Phone:* ${customerPhone}\n📍 *Dining:* ${diningType === 'dinein' ? `Dine-In (${tableNumber || 'Table'})` : `Pickup (${pickupTime || 'Now'})`}\n${border}\n${itemsText}\n${border}\n💵 *Total Paid:* ${formatter.format(cartTotal)}\n🕒 *Ready In:* 15-20 mins\n\nSee you in our hushed CBD courtyard soon! 🌿`;
-                  
-                  const url = cleanNum 
-                    ? `https://wa.me/${cleanNum}?text=${encodeURIComponent(msg)}` 
-                    : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-                  window.open(url, '_blank');
-                  if (triggerToast) triggerToast("WhatsApp receipt opened!", "success");
-                }}
-                className="bg-green-700 hover:bg-green-800 text-white rounded-xl py-3 px-4 font-sans font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm border-0"
-              >
-                <MessageSquare className="w-4 h-4" /> Send to WhatsApp
-              </button>
-
-              <button
-                onClick={() => {
-                  const phone = customerPhone.replace(/\D/g, '');
-                  let cleanNum = phone;
-                  if (phone.startsWith('0') && phone.length === 11) {
-                    cleanNum = '234' + phone.slice(1);
-                  } else if (phone.length === 10 && !phone.startsWith('234')) {
-                    cleanNum = '234' + phone;
-                  }
-                  
-                  const itemsText = cart.map(item => `• ${item.name} x${item.quantity}`).join('\n');
-                  const border = '---------------------------';
-                  const msg = `LUNA CAFE ABUJA\nOrder Receipt: ${orderCode}\n${border}\n👤 Guest: ${customerName}\n📱 Phone: ${customerPhone}\n📍 Dining: ${diningType === 'dinein' ? `Dine-In (${tableNumber || 'Table'})` : `Pickup (${pickupTime || 'Now'})`}\n${border}\n${itemsText}\n${border}\n💵 Total Paid: ${formatter.format(cartTotal)}\n🕒 Ready In: 15-20 mins\n\nSee you in our hushed CBD courtyard soon!`;
-                  
-                  const url = `sms:${cleanNum || ''}?body=${encodeURIComponent(msg)}`;
-                  window.open(url, '_blank');
-                  if (triggerToast) triggerToast("Native text messenger triggered!", "success");
-                }}
-                className="bg-primary-cafe hover:bg-primary-container-cafe text-on-primary rounded-xl py-3 px-4 font-sans font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm border-0"
-              >
-                <Smartphone className="w-4 h-4" /> Send via Text (SMS)
-              </button>
-            </div>
+            <p className="font-sans text-xs text-on-surface-variant-cafe/90 text-center border-t border-outline-cafe/10 pt-4 leading-relaxed">
+              We opened a secure window with your compiled message. If WhatsApp did not open automatically, check your popup settings or use Lola's direct support line to finalize your cash or transfer options!
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={onOrderSuccess}
-              className="bg-primary-cafe text-on-primary rounded-lg font-sans font-semibold tracking-wider uppercase text-xs px-6 py-4 flex items-center justify-center gap-2 hover:bg-primary-container-cafe transition-all cursor-pointer shadow-md"
+              className="bg-primary-cafe text-on-primary rounded-xl font-sans font-semibold tracking-wider uppercase text-xs px-6 py-4 flex items-center justify-center gap-2 hover:bg-primary-container-cafe transition-all cursor-pointer shadow-md border-0"
             >
               Order Something Else
             </button>
             <button
               onClick={onBackToMenu}
-              className="border border-outline-cafe/30 text-primary-cafe rounded-lg font-sans font-semibold tracking-wider uppercase text-xs px-6 py-4 flex items-center justify-center gap-2 hover:bg-surface-container-low-cafe transition-all cursor-pointer"
+              className="border border-outline-cafe/30 text-primary-cafe rounded-xl font-sans font-semibold tracking-wider uppercase text-xs px-6 py-4 flex items-center justify-center gap-2 hover:bg-surface-container-low-cafe transition-all cursor-pointer"
             >
               Back to Escape Page
             </button>

@@ -2,22 +2,40 @@ import { MenuItem, CommunityEvent, Reservation, Order } from '../types';
 import { MENU_ITEMS, COMMUNITY_EVENTS } from '../data';
 
 const STORAGE_KEYS = {
-  MENU_ITEMS: 'luna_cafe_menu_items',
-  COMMUNITY_EVENTS: 'luna_cafe_community_events',
-  RESERVATIONS: 'luna_cafe_reservations',
-  ORDERS: 'luna_cafe_orders',
+  MENU_ITEMS: 'lola_cafe_menu_items',
+  COMMUNITY_EVENTS: 'lola_cafe_community_events',
+  RESERVATIONS: 'lola_cafe_reservations',
+  ORDERS: 'lola_cafe_orders',
 };
 
 // Seed initial data if not exists
 export function initializeStorage() {
   if (typeof window === 'undefined') return;
 
-  if (!localStorage.getItem(STORAGE_KEYS.MENU_ITEMS)) {
+  const storedItemsRaw = localStorage.getItem(STORAGE_KEYS.MENU_ITEMS);
+  let needsReset = false;
+  if (storedItemsRaw) {
+    try {
+      const items = JSON.parse(storedItemsRaw) as MenuItem[];
+      if (items.length === 0 || items.some(item => ['waffles', 'platters', 'coffee'].includes(item.category))) {
+        needsReset = true;
+      }
+    } catch (e) {
+      needsReset = true;
+    }
+  } else {
+    needsReset = true;
+  }
+
+  if (needsReset) {
     const items = MENU_ITEMS.map(item => ({ ...item, isAvailable: true }));
     localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(items));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.COMMUNITY_EVENTS)) {
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_EVENTS, JSON.stringify(COMMUNITY_EVENTS));
+  } else {
+    // Always sync updated event text
     localStorage.setItem(STORAGE_KEYS.COMMUNITY_EVENTS, JSON.stringify(COMMUNITY_EVENTS));
   }
 
@@ -35,7 +53,7 @@ export function initializeStorage() {
         time: '11:00 AM',
         guests: 4,
         specialRequests: 'Courtyard seating requested, birthday celebration.',
-        reference: 'LUNA-7741',
+        reference: 'LOLA-7741',
         status: 'confirmed',
         createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
       },
@@ -50,7 +68,7 @@ export function initializeStorage() {
         time: '12:30 PM',
         guests: 2,
         specialRequests: 'Allergies: gluten free modifications.',
-        reference: 'LUNA-2391',
+        reference: 'LOLA-2391',
         status: 'pending',
         createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
       }
@@ -66,17 +84,17 @@ export function initializeStorage() {
         items: [
           {
             id: 'item-1',
-            name: 'The Luna Cortado',
-            basePrice: 4500,
+            name: "Lola's Double Smash Burger",
+            basePrice: 7500,
             quantity: 2,
-            modifiers: [{ name: 'Oat Milk Alternative', price: 2000 }],
-            unitTotal: 6500,
-            total: 13000
+            modifiers: [{ name: 'Extra Cheddar Cheese Slice', price: 1500 }],
+            unitTotal: 9000,
+            total: 18000
           }
         ],
-        subtotal: 13000,
+        subtotal: 18000,
         tip: 2000,
-        total: 16500,
+        total: 21500,
         diningType: 'dinein',
         name: 'Amina Bello',
         phone: '08099887766',
@@ -97,7 +115,7 @@ export function getStoredMenuItems(): MenuItem[] {
 
 export function saveStoredMenuItems(items: MenuItem[]) {
   localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(items));
-  window.dispatchEvent(new Event('luna_menu_updated'));
+  window.dispatchEvent(new Event('lola_menu_updated'));
 }
 
 // Community Events Helpers
@@ -109,7 +127,7 @@ export function getStoredEvents(): CommunityEvent[] {
 
 export function saveStoredEvents(events: CommunityEvent[]) {
   localStorage.setItem(STORAGE_KEYS.COMMUNITY_EVENTS, JSON.stringify(events));
-  window.dispatchEvent(new Event('luna_events_updated'));
+  window.dispatchEvent(new Event('lola_events_updated'));
 }
 
 // Reservations Helpers
@@ -121,7 +139,7 @@ export function getStoredReservations(): Reservation[] {
 
 export function saveStoredReservations(reservations: Reservation[]) {
   localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(reservations));
-  window.dispatchEvent(new Event('luna_reservations_updated'));
+  window.dispatchEvent(new Event('lola_reservations_updated'));
 }
 
 // Orders Helpers
@@ -133,5 +151,5 @@ export function getStoredOrders(): Order[] {
 
 export function saveStoredOrders(orders: Order[]) {
   localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
-  window.dispatchEvent(new Event('luna_orders_updated'));
+  window.dispatchEvent(new Event('lola_orders_updated'));
 }

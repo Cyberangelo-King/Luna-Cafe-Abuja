@@ -1,6 +1,6 @@
 {
-  "name": "Luna Cafe Abuja",
-  "description": "A premium, conversion-optimized, visual digital sanctuary for Luna Cafe Abuja, featuring interactive menu order, table reservations, community event ticket booking, and high-fidelity responsive design.",
+  "name": "Lola's Cafe Abuja",
+  "description": "A premium, conversion-optimized, visual digital sanctuary for Lola's Cafe Abuja, featuring interactive menu order, table reservations, community event ticket booking, and high-fidelity responsive design.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

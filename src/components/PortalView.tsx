@@ -33,7 +33,7 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
-  const [newItemCategory, setNewItemCategory] = useState<MenuCategory>('coffee');
+  const [newItemCategory, setNewItemCategory] = useState<MenuCategory>('burgers');
   const [newItemImage, setNewItemImage] = useState('');
 
   // Form states for creating new events
@@ -150,9 +150,11 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
     if (isNaN(priceNum)) return;
 
     const defaultImages: Record<MenuCategory, string> = {
-      coffee: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDpXZPKHKKGR-0I7o4Db4fMUdRIKW2AE36kgP6uvYmDur2iQ-_H67SA3STSNV-ikMKdDcn91JtkuCzmgoChHut_APD4xlSTfNAXno66GMNJYgoAFMZq2ZX-ID1ZefaIn29T4mgJ2thlHBOsvhzl91IOc2hHvzL8vsSQvJB1Qdo83NX2YWcB87bu2R5vWRVBBB7sLb6Pjb3FeqlF8045d93cp7slhl3ECSkhC2BT26e4kNGtlW2es1_Eag',
-      waffles: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCqInGEr4putBsouug9KPqudZ4E4XRRntdkujtZyaiwjsElAdN46D9lmuJiiRCci1L0A7o0oQzqZsmPkVApNAnyNrz8-RGPP7C-AzbYvxOmqd5iOs-atvR4VFBqQ7V4l1YLRvq2kwOCIfSUMf9LQ8F5Qb0bx4h9oUcuzRoLF22upVgnXoDkavxorcjzXqxAdRjDaOdHQqZXu_k6gJJzKIKGESF2Vs2A1-r0aMzCCY0JvjaAgzcWvNqThg',
-      platters: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD_PenHlK-TF2nIX3xB6if-aS8yZUnEaoXKyTP-2kbaZ_E88YBu94uYLjEBFAZwpwhR4A0FqXkdM8SiMWPcFmsq1IKKgWGjzjoIcTAztngb_zdQVgOPV647TUgsW7vJpkcq-ctbqSihoiqMKdHTGpDXOWr5tA3CCDNHAQ1cbGXnuxySqBvv3rnSl1xHL8-sBpGRzYBvUWvg4g-6deM3QZwvRoJ8NJRQqRlW-AEEq3wAQG1ElpnXRncMbQ'
+      burgers: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80',
+      pizza: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80',
+      corndogs: 'https://images.unsplash.com/photo-1623653387945-2fd25214f8fc?auto=format&fit=crop&w=600&q=80',
+      fries_wings: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=600&q=80',
+      boba_drinks: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=600&q=80'
     };
 
     const newItem: MenuItem = {
@@ -162,7 +164,11 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
       price: priceNum,
       imageUrl: newItemImage || defaultImages[newItemCategory],
       category: newItemCategory,
-      modifierCategory: newItemCategory === 'waffles' ? 'waffle' : newItemCategory === 'platters' ? 'platter' : 'coffee',
+      modifierCategory: 
+        newItemCategory === 'burgers' ? 'burger' :
+        newItemCategory === 'pizza' ? 'pizza' :
+        newItemCategory === 'corndogs' ? 'corndog' :
+        newItemCategory === 'fries_wings' ? 'wings' : 'boba',
       isAvailable: true
     };
 
@@ -236,7 +242,7 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
             </span>
           </div>
           <h1 className="font-display text-2xl md:text-3xl text-primary-cafe font-bold mt-1">
-            Luna Staff Dashboard
+            Lola's Staff Dashboard
           </h1>
           <p className="font-sans text-xs text-on-surface-variant-cafe/80 mt-1 leading-relaxed">
             Monitor incoming client orders, manage courtyard seatings, toggle menu availability, and notify guests for completely free.
@@ -646,9 +652,11 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
                         onChange={(e) => setNewItemCategory(e.target.value as MenuCategory)}
                         className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-lg px-3 py-2 text-primary-cafe focus:outline-none focus:border-secondary-cafe focus:ring-1 focus:ring-secondary-cafe text-sm cursor-pointer"
                       >
-                        <option value="coffee">Coffee Craft</option>
-                        <option value="waffles">Handcrafted Waffles</option>
-                        <option value="platters">Abuja CBD Platters</option>
+                        <option value="burgers">Gourmet Burgers</option>
+                        <option value="pizza">Supreme Pizza</option>
+                        <option value="corndogs">Hand-Pulled Corndogs</option>
+                        <option value="fries_wings">Fries &amp; Wings</option>
+                        <option value="boba_drinks">Boba Tea &amp; Drinks</option>
                       </select>
                     </div>
                   </div>
@@ -942,14 +950,14 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
                 <div className="space-y-2">
                   <p className="font-bold text-[10px] uppercase tracking-wider text-primary-cafe">WhatsApp Dispatch Preview (100% Free)</p>
                   <div className="bg-green-50 border border-green-200 text-green-900 rounded-xl p-4 font-mono whitespace-pre-wrap text-[11px] leading-relaxed shadow-inner">
-                    {`☕ *LUNA CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (*${notificationModal.code}*) is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our hushed CBD courtyard soon!`}
+                    {`☕ *LOLA'S CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (*${notificationModal.code}*) is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our hushed CBD courtyard soon!`}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <p className="font-bold text-[10px] uppercase tracking-wider text-primary-cafe">SMS Text Dispatch Preview (100% Free)</p>
                   <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-4 font-mono whitespace-pre-wrap text-[11px] leading-relaxed shadow-inner">
-                    {`LUNA CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (${notificationModal.code}) is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our hushed CBD courtyard soon!`}
+                    {`LOLA'S CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (${notificationModal.code}) is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our hushed CBD courtyard soon!`}
                   </div>
                 </div>
               </div>
@@ -957,7 +965,7 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
               <div className="pt-2 border-t border-outline-cafe/15 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => {
-                    const textPayload = `☕ *LUNA CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (*${notificationModal.code}*) is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our hushed courtyard soon!`;
+                    const textPayload = `☕ *LOLA'S CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (*${notificationModal.code}*) is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our hushed courtyard soon!`;
                     executeFreeNotification(notificationModal.phone, textPayload, 'whatsapp');
                   }}
                   className="w-full bg-green-700 hover:bg-green-800 text-white font-sans font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 border-0 shadow-sm"
@@ -966,7 +974,7 @@ export default function PortalView({ triggerToast }: PortalViewProps = {}) {
                 </button>
                 <button
                   onClick={() => {
-                    const textPayload = `LUNA CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (${notificationModal.code}) is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our hushed courtyard soon!`;
+                    const textPayload = `LOLA'S CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour ${notificationModal.type === 'order' ? 'order' : 'booking'} (${notificationModal.code}) is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our hushed courtyard soon!`;
                     executeFreeNotification(notificationModal.phone, textPayload, 'sms');
                   }}
                   className="w-full bg-primary-cafe hover:bg-primary-container-cafe text-on-primary font-sans font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 border-0 shadow-sm"

@@ -1,4 +1,4 @@
-export type MenuCategory = 'waffles' | 'platters' | 'coffee';
+export type MenuCategory = 'burgers' | 'pizza' | 'corndogs' | 'fries_wings' | 'boba_drinks';
 
 export interface ModifierOption {
   id: string;
@@ -15,7 +15,7 @@ export interface MenuItem {
   price: number;
   imageUrl: string;
   category: MenuCategory;
-  modifierCategory: 'waffle' | 'platter' | 'coffee';
+  modifierCategory: 'burger' | 'pizza' | 'corndog' | 'wings' | 'boba';
   isAvailable?: boolean; // Owner can toggle availability
 }
 

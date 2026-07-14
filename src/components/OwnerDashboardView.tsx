@@ -17,6 +17,8 @@ import {
   getStoredReservations, saveStoredReservations,
   getStoredOrders, saveStoredOrders 
 } from '../services/cafeDataService';
+import { getAuthConfig, saveAuthConfig, AuthConfig } from '../services/authService';
+import PortalView from './PortalView';
 
 interface OwnerDashboardViewProps {
   onBackToHome?: () => void;
@@ -26,13 +28,40 @@ interface OwnerDashboardViewProps {
 export default function OwnerDashboardView({ onBackToHome, triggerToast }: OwnerDashboardViewProps) {
   // Passcode verification state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem('luna_owner_auth') === 'true';
+    return sessionStorage.getItem('lola_owner_auth') === 'true';
   });
-  const [passcode, setPasscode] = useState('');
-  const [passcodeError, setPasscodeError] = useState('');
+  
+  // Load Auth Config from local storage
+  const [authConfig, setAuthConfig] = useState<AuthConfig>(getAuthConfig());
+  const [activeTab, setActiveTab] = useState<'analytics' | 'orders' | 'reservations' | 'menu' | 'events' | 'crm' | 'credentials' | 'staff-view'>('analytics');
 
-  // Dashboard content states
-  const [activeTab, setActiveTab] = useState<'analytics' | 'orders' | 'reservations' | 'menu' | 'events' | 'crm'>('analytics');
+  // Login inputs
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  // Register inputs
+  const [registerUsername, setRegisterUsername] = useState('admin');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('lola@lolascafe.ng');
+  const [registerError, setRegisterError] = useState('');
+
+  // Password recovery states
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryStep, setRecoveryStep] = useState<1 | 2 | 3>(1);
+  const [simulatedResetCode, setSimulatedResetCode] = useState('');
+  const [verificationCodeInput, setVerificationCodeInput] = useState('');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
+
+  // Credentials change states (for logged-in owner dashboard)
+  const [newOwnerUsername, setNewOwnerUsername] = useState(authConfig.ownerUsername);
+  const [newOwnerPassword, setNewOwnerPassword] = useState(authConfig.ownerPasswordHash);
+  const [newOwnerEmail, setNewOwnerEmail] = useState(authConfig.ownerEmail);
+
+  const [newStaffUsername, setNewStaffUsername] = useState(authConfig.staffUsername);
+  const [newStaffPassword, setNewStaffPassword] = useState(authConfig.staffPasswordHash);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -47,7 +76,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
-  const [newItemCategory, setNewItemCategory] = useState<MenuCategory>('coffee');
+  const [newItemCategory, setNewItemCategory] = useState<MenuCategory>('burgers');
   const [newItemImage, setNewItemImage] = useState('');
 
   // Form states for creating new events
@@ -87,16 +116,16 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
       
       // Live event subscription
       const updateHandler = () => loadAllData();
-      window.addEventListener('luna_orders_updated', updateHandler);
-      window.addEventListener('luna_reservations_updated', updateHandler);
-      window.addEventListener('luna_menu_updated', updateHandler);
-      window.addEventListener('luna_events_updated', updateHandler);
+      window.addEventListener('lola_orders_updated', updateHandler);
+      window.addEventListener('lola_reservations_updated', updateHandler);
+      window.addEventListener('lola_menu_updated', updateHandler);
+      window.addEventListener('lola_events_updated', updateHandler);
 
       return () => {
-        window.removeEventListener('luna_orders_updated', updateHandler);
-        window.removeEventListener('luna_reservations_updated', updateHandler);
-        window.removeEventListener('luna_menu_updated', updateHandler);
-        window.removeEventListener('luna_events_updated', updateHandler);
+        window.removeEventListener('lola_orders_updated', updateHandler);
+        window.removeEventListener('lola_reservations_updated', updateHandler);
+        window.removeEventListener('lola_menu_updated', updateHandler);
+        window.removeEventListener('lola_events_updated', updateHandler);
       };
     }
   }, [isAuthenticated]);
@@ -108,26 +137,133 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
     setOrders(getStoredOrders());
   };
 
-  // Auth handler
-  const handleAuthSubmit = (e: FormEvent) => {
+  // Auth handlers
+  const handleOwnerRegister = (e: FormEvent) => {
     e.preventDefault();
-    // Gated passcode check (standard PIN is 1042 or faith2026 for owner Faith)
-    if (passcode === '1042' || passcode.toLowerCase() === 'faith2026') {
+    if (!registerUsername || !registerPassword || !registerEmail) {
+      setRegisterError("Please fill in all registration fields.");
+      return;
+    }
+    const updated: AuthConfig = {
+      ownerRegistered: true,
+      ownerUsername: registerUsername,
+      ownerPasswordHash: registerPassword,
+      ownerEmail: registerEmail,
+      staffUsername: authConfig.staffUsername || 'staff',
+      staffPasswordHash: authConfig.staffPasswordHash || 'lola2026',
+    };
+    setAuthConfig(updated);
+    saveAuthConfig(updated);
+    setIsAuthenticated(true);
+    sessionStorage.setItem('lola_owner_auth', 'true');
+    setRegisterError('');
+    
+    // Sync active inputs
+    setNewOwnerUsername(updated.ownerUsername);
+    setNewOwnerPassword(updated.ownerPasswordHash);
+    setNewOwnerEmail(updated.ownerEmail);
+
+    if (triggerToast) {
+      triggerToast(`Registration Successful! Welcome, Lola (${registerUsername}).`, "success");
+    }
+  };
+
+  const handleOwnerLogin = (e: FormEvent) => {
+    e.preventDefault();
+    if (loginUsername === authConfig.ownerUsername && loginPassword === authConfig.ownerPasswordHash) {
       setIsAuthenticated(true);
-      sessionStorage.setItem('luna_owner_auth', 'true');
-      setPasscodeError('');
+      sessionStorage.setItem('lola_owner_auth', 'true');
+      setLoginError('');
       if (triggerToast) {
-        triggerToast("Welcome, Faith. Secure Owner Boardroom decrypted.", "success");
+        triggerToast(`Boardroom Decrypted. Welcome back, ${authConfig.ownerUsername}!`, "success");
       }
     } else {
-      setPasscodeError("Incorrect owner passcode. Intrusive access logged.");
+      setLoginError("Incorrect credentials. Intrusive access has been logged.");
+    }
+  };
+
+  const handleSendRecoveryCode = (e: FormEvent) => {
+    e.preventDefault();
+    if (recoveryEmail.trim().toLowerCase() === authConfig.ownerEmail.trim().toLowerCase()) {
+      const code = String(Math.floor(1000 + Math.random() * 9000));
+      setSimulatedResetCode(code);
+      setRecoveryStep(2);
+      setRecoveryError('');
+      if (triggerToast) {
+        triggerToast(`Simulated dispatch code: ${code}`, "info");
+      }
+    } else {
+      setRecoveryError("Email address does not match the registered owner's email.");
+    }
+  };
+
+  const handleVerifyRecoveryCode = (e: FormEvent) => {
+    e.preventDefault();
+    if (verificationCodeInput.trim() === simulatedResetCode) {
+      setRecoveryStep(3);
+      setRecoveryError('');
+      if (triggerToast) {
+        triggerToast("Email ownership verified successfully!", "success");
+      }
+    } else {
+      setRecoveryError("Invalid security token. Please inspect the simulated dispatch inbox.");
+    }
+  };
+
+  const handleResetPassword = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newPasswordInput) {
+      setRecoveryError("Please enter a valid password.");
+      return;
+    }
+    const updated: AuthConfig = {
+      ...authConfig,
+      ownerPasswordHash: newPasswordInput
+    };
+    setAuthConfig(updated);
+    saveAuthConfig(updated);
+    setIsAuthenticated(true);
+    sessionStorage.setItem('lola_owner_auth', 'true');
+    
+    // Clear recovery states
+    setIsRecoveryMode(false);
+    setRecoveryEmail('');
+    setRecoveryStep(1);
+    setSimulatedResetCode('');
+    setVerificationCodeInput('');
+    setNewPasswordInput('');
+    setRecoveryError('');
+
+    // Sync active inputs
+    setNewOwnerPassword(newPasswordInput);
+
+    if (triggerToast) {
+      triggerToast("Credentials successfully reset! Auto-authenticated to Boardroom.", "success");
+    }
+  };
+
+  const handleUpdateCredentials = (e: FormEvent) => {
+    e.preventDefault();
+    const updated: AuthConfig = {
+      ownerRegistered: true,
+      ownerUsername: newOwnerUsername,
+      ownerPasswordHash: newOwnerPassword,
+      ownerEmail: newOwnerEmail,
+      staffUsername: newStaffUsername,
+      staffPasswordHash: newStaffPassword,
+    };
+    setAuthConfig(updated);
+    saveAuthConfig(updated);
+    if (triggerToast) {
+      triggerToast("Lounge and board credentials successfully updated!", "success");
     }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    sessionStorage.removeItem('luna_owner_auth');
-    setPasscode('');
+    sessionStorage.removeItem('lola_owner_auth');
+    setLoginUsername('');
+    setLoginPassword('');
   };
 
   // Status controls
@@ -177,7 +313,11 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
       description: newItemDesc || 'Crafted daily by our courtyard pastry masters.',
       price: parseFloat(newItemPrice),
       category: newItemCategory,
-      modifierCategory: newItemCategory === 'waffles' ? 'waffle' : newItemCategory === 'platters' ? 'platter' : 'coffee',
+      modifierCategory: 
+        newItemCategory === 'burgers' ? 'burger' :
+        newItemCategory === 'pizza' ? 'pizza' :
+        newItemCategory === 'corndogs' ? 'corndog' :
+        newItemCategory === 'fries_wings' ? 'wings' : 'boba',
       imageUrl: newItemImage || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&q=80&w=400',
       isAvailable: true
     };
@@ -200,7 +340,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
       id: `ev-${Date.now()}`,
       title: newEventTitle,
       category: newEventCategory,
-      description: newEventDesc || 'A lovely community meetup at Luna CBD courtyard.',
+      description: newEventDesc || 'A lovely community meetup at Lola CBD courtyard.',
       price: newEventPrice === 'Free' || !newEventPrice ? 'Free' : parseFloat(newEventPrice),
       day: newEventDay,
       date: parseInt(newEventDate),
@@ -310,7 +450,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
     // Fallbacks
     if (itemScores.size === 0) {
       return [
-        { name: 'The Luna Cortado', count: 24, rev: 108000 },
+        { name: 'The Lola Cortado', count: 24, rev: 108000 },
         { name: 'Sourdough & Organic Eggs Platter', count: 18, rev: 144000 },
         { name: 'Hushed Courtyard Waffles', count: 15, rev: 112500 },
       ];
@@ -361,7 +501,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
   // CSV Report Generator (Simulated client export file)
   const handleExportReports = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Owner Report,Luna Cafe Abuja,Generated: 2026\n\n";
+    csvContent += "Owner Report,Lola's Cafe Abuja,Generated: 2026\n\n";
     csvContent += "REPORT METRICS\n";
     csvContent += `Total Completed Sales,${totalSales} NGN\n`;
     csvContent += `Staff Appreciation Tips,${totalTips} NGN\n`;
@@ -376,7 +516,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `luna_cafe_owner_report_2026.csv`);
+    link.setAttribute("download", `lola_cafe_owner_report_2026.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -391,54 +531,255 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
       
       {/* SECURITY ACCESS GATE IF NOT AUTHENTICATED */}
       {!isAuthenticated ? (
-        <div className="w-full max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[75vh]">
+        <div className="w-full max-w-7xl mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-[85vh]">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="w-full max-w-md bg-surface-container-lowest-cafe border border-outline-cafe/20 rounded-3xl p-8 md:p-12 text-center shadow-xl space-y-6"
+            className="w-full max-w-md bg-surface-container-lowest-cafe border border-outline-cafe/20 rounded-3xl p-6 md:p-10 text-center shadow-xl space-y-6"
           >
-            <div className="w-16 h-16 bg-primary-cafe text-secondary-container-cafe rounded-full flex items-center justify-center mx-auto border border-outline-cafe/15 shadow-inner">
-              <Lock className="w-8 h-8" />
+            <div className="w-14 h-14 bg-primary-cafe text-secondary-container-cafe rounded-full flex items-center justify-center mx-auto border border-outline-cafe/15 shadow-inner">
+              <Lock className="w-6 h-6" />
             </div>
 
-            <div className="space-y-2">
-              <h1 className="font-display text-2xl text-primary-cafe font-bold">Owner's Boardroom</h1>
-              <p className="font-sans text-xs text-secondary-cafe font-extrabold uppercase tracking-widest">Faith's Sanctuary</p>
-              <p className="font-sans text-xs text-on-surface-variant-cafe leading-relaxed max-w-sm mx-auto">
-                Decryption required. Enter the private gateway passcode below to access real-time financial tools, audits, menu engines, and customer logs.
-              </p>
-            </div>
-
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
-              <div className="flex flex-col gap-2 text-left">
-                <label className="font-sans text-[10px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">Boardroom Code</label>
-                <input
-                  type="password"
-                  required
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter Passcode..."
-                  className="w-full bg-surface-cafe border border-outline-cafe/20 rounded-xl px-4 py-3 font-sans text-sm text-center tracking-widest text-primary-cafe focus:outline-none focus:border-secondary-cafe focus:ring-1 focus:ring-secondary-cafe transition-all"
-                />
-                {passcodeError && (
-                  <p className="font-sans text-[11px] text-red-500 font-medium text-center mt-1 flex items-center justify-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {passcodeError}
+            {/* PASSWORD RECOVERY INTERACTIVE MODE */}
+            {isRecoveryMode ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h1 className="font-display text-xl text-primary-cafe font-bold">Credential Recovery</h1>
+                  <p className="font-sans text-xs text-on-surface-variant-cafe leading-relaxed">
+                    Verify ownership of the registered email to bypass security and instantly set a new Boardroom access password.
                   </p>
-                )}
-              </div>
+                </div>
 
-              <button
-                type="submit"
-                className="w-full bg-primary-cafe text-on-primary rounded-xl py-3.5 font-sans font-bold text-xs tracking-wider uppercase hover:bg-primary-container-cafe transition-all cursor-pointer shadow-md"
-              >
-                Unlock Lounge
-              </button>
-            </form>
+                {recoveryStep === 1 && (
+                  <form onSubmit={handleSendRecoveryCode} className="space-y-4 text-left">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-sans text-[10px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">Registered Email</label>
+                      <input
+                        type="email"
+                        required
+                        value={recoveryEmail}
+                        onChange={(e) => setRecoveryEmail(e.target.value)}
+                        placeholder="Enter registered email..."
+                        className="w-full bg-surface-cafe border border-outline-cafe/20 rounded-xl px-4 py-2.5 font-sans text-sm text-primary-cafe focus:outline-none focus:border-secondary-cafe focus:ring-1 focus:ring-secondary-cafe"
+                      />
+                      {recoveryError && (
+                        <p className="font-sans text-[11px] text-red-500 font-medium text-center mt-1 flex items-center justify-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" /> {recoveryError}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-primary-cafe text-on-primary rounded-xl py-3 font-sans font-bold text-xs tracking-wider uppercase hover:bg-primary-container-cafe transition-all cursor-pointer shadow-sm"
+                    >
+                      Dispatch Security Token
+                    </button>
+                  </form>
+                )}
+
+                {recoveryStep === 2 && (
+                  <form onSubmit={handleVerifyRecoveryCode} className="space-y-4 text-left">
+                    <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-3 text-[11px] font-mono whitespace-pre-wrap leading-relaxed space-y-1">
+                      <p className="font-bold uppercase tracking-wide text-blue-800">[SIMULATION ENGINE STATUS: DISPATCHED]</p>
+                      <p>An email was routed to: <span className="underline">{authConfig.ownerEmail}</span></p>
+                      <p className="font-black bg-blue-100 px-1.5 py-0.5 rounded text-blue-950 inline-block mt-1">Verification Code: {simulatedResetCode}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-sans text-[10px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">4-Digit Security Code</label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={4}
+                        value={verificationCodeInput}
+                        onChange={(e) => setVerificationCodeInput(e.target.value)}
+                        placeholder="Enter 4-digit code..."
+                        className="w-full bg-surface-cafe border border-outline-cafe/20 rounded-xl px-4 py-2.5 font-sans text-sm text-center tracking-widest text-primary-cafe focus:outline-none focus:border-secondary-cafe focus:ring-1 focus:ring-secondary-cafe"
+                      />
+                      {recoveryError && (
+                        <p className="font-sans text-[11px] text-red-500 font-medium text-center mt-1 flex items-center justify-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" /> {recoveryError}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-green-700 hover:bg-green-800 text-white rounded-xl py-3 font-sans font-bold text-xs tracking-wider uppercase transition-all cursor-pointer shadow-sm"
+                    >
+                      Verify Token
+                    </button>
+                  </form>
+                )}
+
+                {recoveryStep === 3 && (
+                  <form onSubmit={handleResetPassword} className="space-y-4 text-left">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-sans text-[10px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">New Boardroom Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={newPasswordInput}
+                        onChange={(e) => setNewPasswordInput(e.target.value)}
+                        placeholder="Enter new password..."
+                        className="w-full bg-surface-cafe border border-outline-cafe/20 rounded-xl px-4 py-2.5 font-sans text-sm text-primary-cafe focus:outline-none focus:border-secondary-cafe focus:ring-1 focus:ring-secondary-cafe"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-primary-cafe text-on-primary rounded-xl py-3 font-sans font-bold text-xs tracking-wider uppercase hover:bg-primary-container-cafe transition-all cursor-pointer shadow-sm"
+                    >
+                      Save &amp; Enter Lounge
+                    </button>
+                  </form>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRecoveryMode(false);
+                    setRecoveryStep(1);
+                    setRecoveryError('');
+                  }}
+                  className="font-sans text-[11px] text-on-surface-variant-cafe/70 hover:text-primary-cafe underline block mx-auto pt-2"
+                >
+                  Back to Login
+                </button>
+              </div>
+            ) : !authConfig.ownerRegistered ? (
+              
+              /* OWNER INITIAL REGISTRATION FLOW */
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <h1 className="font-display text-xl text-primary-cafe font-bold">Register Owner Boardroom</h1>
+                  <p className="font-sans text-xs text-secondary-cafe font-extrabold uppercase tracking-widest">Lola's Secure Desk</p>
+                  <p className="font-sans text-[11px] text-on-surface-variant-cafe leading-relaxed max-w-sm mx-auto">
+                    Welcome, Lola. Create your master owner credentials. This email enables secure retrieval if details are updated.
+                  </p>
+                </div>
+
+                <form onSubmit={handleOwnerRegister} className="space-y-3 text-left">
+                  <div className="flex flex-col gap-1">
+                    <label className="font-sans text-[9px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">Master Username</label>
+                    <input
+                      type="text"
+                      required
+                      value={registerUsername}
+                      onChange={(e) => setRegisterUsername(e.target.value)}
+                      placeholder="e.g. admin"
+                      className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-4 py-2 text-primary-cafe font-sans text-xs focus:outline-none focus:border-secondary-cafe"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="font-sans text-[9px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">Owner Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      placeholder="e.g. faithakinboyejo@gmail.com"
+                      className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-4 py-2 text-primary-cafe font-sans text-xs focus:outline-none focus:border-secondary-cafe"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="font-sans text-[9px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">Master Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      placeholder="Choose private password..."
+                      className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-4 py-2 text-primary-cafe font-sans text-xs focus:outline-none focus:border-secondary-cafe"
+                    />
+                  </div>
+
+                  {registerError && (
+                    <p className="font-sans text-[11px] text-red-500 font-medium text-center mt-1 flex items-center justify-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> {registerError}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full bg-primary-cafe text-on-primary rounded-xl py-3 font-sans font-bold text-xs tracking-wider uppercase hover:bg-primary-container-cafe transition-all cursor-pointer shadow-md mt-2"
+                  >
+                    Register and Initialize
+                  </button>
+                </form>
+              </div>
+            ) : (
+              
+              /* STANDARD OWNER LOGIN FLOW */
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <h1 className="font-display text-xl text-primary-cafe font-bold">Owner's Boardroom</h1>
+                  <p className="font-sans text-xs text-secondary-cafe font-extrabold uppercase tracking-widest">Lola's Sanctuary</p>
+                  <p className="font-sans text-[11px] text-on-surface-variant-cafe leading-relaxed max-w-sm mx-auto">
+                    Enter the master credentials set during registration to gain administrative access.
+                  </p>
+                </div>
+
+                <form onSubmit={handleOwnerLogin} className="space-y-3.5 text-left">
+                  <div className="flex flex-col gap-1">
+                    <label className="font-sans text-[9px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">Username</label>
+                    <input
+                      type="text"
+                      required
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
+                      placeholder="Username..."
+                      className="w-full bg-surface-cafe border border-outline-cafe/20 rounded-xl px-4 py-2.5 font-sans text-xs text-primary-cafe focus:outline-none focus:border-secondary-cafe"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="font-sans text-[9px] font-bold uppercase tracking-wider text-on-surface-variant-cafe/80">Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Password..."
+                      className="w-full bg-surface-cafe border border-outline-cafe/20 rounded-xl px-4 py-2.5 font-sans text-xs text-primary-cafe focus:outline-none focus:border-secondary-cafe"
+                    />
+                  </div>
+
+                  {loginError && (
+                    <p className="font-sans text-[11px] text-red-500 font-medium text-center mt-1 flex items-center justify-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> {loginError}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full bg-primary-cafe text-on-primary rounded-xl py-3 font-sans font-bold text-xs tracking-wider uppercase hover:bg-primary-container-cafe transition-all cursor-pointer shadow-md mt-2"
+                  >
+                    Authenticate Owner
+                  </button>
+                </form>
+
+                <div className="pt-2 flex justify-between items-center text-[10px] text-on-surface-variant-cafe/70">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRecoveryMode(true);
+                      setRecoveryStep(1);
+                      setRecoveryError('');
+                    }}
+                    className="hover:text-primary-cafe underline cursor-pointer"
+                  >
+                    Forgot Credentials or Reset?
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="pt-2 border-t border-outline-cafe/10">
               <button
                 onClick={onBackToHome}
-                className="font-sans text-xs font-bold text-on-surface-variant-cafe hover:text-primary-cafe transition-colors flex items-center justify-center gap-1 mx-auto"
+                className="font-sans text-[11px] font-bold text-on-surface-variant-cafe hover:text-primary-cafe transition-colors flex items-center justify-center gap-1 mx-auto"
               >
                 Return to Escape Home
               </button>
@@ -457,9 +798,9 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
                 <span className="bg-secondary-cafe/10 text-secondary-cafe text-[9px] uppercase tracking-widest font-black px-2.5 py-1 rounded-full border border-secondary-cafe/20 flex items-center gap-1 shadow-sm">
                   <ShieldCheck className="w-3 h-3" /> Private Boardroom
                 </span>
-                <span className="font-sans text-xs text-on-surface-variant-cafe/60 font-semibold">Faith's Office</span>
+                <span className="font-sans text-xs text-on-surface-variant-cafe/60 font-semibold">Lola's Office</span>
               </div>
-              <h1 className="font-display text-3xl md:text-5xl text-primary-cafe font-extrabold tracking-tight">Luna Control &amp; Analytics</h1>
+              <h1 className="font-display text-3xl md:text-5xl text-primary-cafe font-extrabold tracking-tight">Lola Control &amp; Analytics</h1>
               <p className="font-sans text-sm text-on-surface-variant-cafe mt-1 max-w-xl">
                 Real-time financial audits, menu modification systems, courtyard capacity monitors, and free WhatsApp CRM notify platforms.
               </p>
@@ -586,6 +927,24 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
             >
               👤 CRM Directory
               {activeTab === 'crm' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary-cafe" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('credentials')}
+              className={`pb-3 px-2 font-sans font-extrabold text-xs tracking-wider uppercase transition-all relative ${
+                activeTab === 'credentials' ? 'text-secondary-cafe' : 'text-on-surface-variant-cafe/70 hover:text-primary-cafe'
+              }`}
+            >
+              🔑 Credentials &amp; Access
+              {activeTab === 'credentials' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary-cafe" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('staff-view')}
+              className={`pb-3 px-2 font-sans font-extrabold text-xs tracking-wider uppercase transition-all relative ${
+                activeTab === 'staff-view' ? 'text-secondary-cafe' : 'text-on-surface-variant-cafe/70 hover:text-primary-cafe'
+              }`}
+            >
+              🚪 Staff Lounge View
+              {activeTab === 'staff-view' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary-cafe" />}
             </button>
           </div>
 
@@ -1111,9 +1470,11 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
                         onChange={(e) => setNewItemCategory(e.target.value as MenuCategory)}
                         className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-3 py-2.5 text-primary-cafe font-sans"
                       >
-                        <option value="coffee">☕ Brew / Specialty Coffee</option>
-                        <option value="waffles">🧇 Organic Waffles</option>
-                        <option value="platters">🍳 Artisan Platters</option>
+                        <option value="burgers">🍔 Gourmet Burgers</option>
+                        <option value="pizza">🍕 Supreme Pizza</option>
+                        <option value="corndogs">🌭 Hand-Pulled Corndogs</option>
+                        <option value="fries_wings">🍟 Fries &amp; Wings</option>
+                        <option value="boba_drinks">🧋 Boba Tea &amp; Drinks</option>
                       </select>
                     </div>
 
@@ -1428,7 +1789,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => {
-                                  const greetingText = `Hi ${client.name}! ☕ This is Faith from Luna Cafe Abuja CBD. We have exciting new waffles and coffee brews ready in our courtyard. Hope to see you soon! 🌿`;
+                                  const greetingText = `Hi ${client.name}! ☕ This is Lola from Lola's Cafe Abuja CBD. We have exciting new waffles and coffee brews ready in our courtyard. Hope to see you soon! 🌿`;
                                   executeFreeNotification(client.phone, greetingText, 'whatsapp');
                                 }}
                                 className="bg-green-700 hover:bg-green-800 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer border-0 shadow-sm"
@@ -1437,7 +1798,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
                               </button>
                               <button
                                 onClick={() => {
-                                  const greetingText = `Hi ${client.name}! This is Faith from Luna Cafe Abuja. We have exciting new courtyard gatherings scheduled this month. Reply to book!`;
+                                  const greetingText = `Hi ${client.name}! This is Lola from Lola's Cafe Abuja. We have exciting new courtyard gatherings scheduled this month. Reply to book!`;
                                   executeFreeNotification(client.phone, greetingText, 'sms');
                                 }}
                                 className="border border-outline-cafe/35 text-primary-cafe hover:bg-surface-container-low-cafe font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
@@ -1452,6 +1813,124 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
                   </table>
                 </div>
 
+              </div>
+            )}
+
+            {/* 7. CREDENTIALS & ACCESS CONTROLS TAB */}
+            {activeTab === 'credentials' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                
+                {/* Owner Credentials Card */}
+                <div className="bg-surface-container-lowest-cafe border border-outline-cafe/15 rounded-3xl p-6 shadow-sm space-y-6">
+                  <div>
+                    <h3 className="font-display text-base font-bold text-primary-cafe uppercase tracking-wider flex items-center gap-1.5">
+                      <ShieldCheck className="w-5 h-5 text-secondary-cafe" /> Update Owner Credentials
+                    </h3>
+                    <p className="font-sans text-xs text-on-surface-variant-cafe/80 mt-0.5">
+                      Change the master username, passcode/password, and contact email for Lola's private boardroom.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleUpdateCredentials} className="space-y-4 text-xs font-sans">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-bold uppercase text-on-surface-variant-cafe">Owner Username</label>
+                      <input
+                        type="text"
+                        required
+                        value={newOwnerUsername}
+                        onChange={(e) => setNewOwnerUsername(e.target.value)}
+                        className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-3 py-2.5 text-primary-cafe font-sans"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-bold uppercase text-on-surface-variant-cafe">Owner Email (For Bypass Recovery)</label>
+                      <input
+                        type="email"
+                        required
+                        value={newOwnerEmail}
+                        onChange={(e) => setNewOwnerEmail(e.target.value)}
+                        className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-3 py-2.5 text-primary-cafe font-sans"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-bold uppercase text-on-surface-variant-cafe">Owner Password / Passcode</label>
+                      <input
+                        type="password"
+                        required
+                        value={newOwnerPassword}
+                        onChange={(e) => setNewOwnerPassword(e.target.value)}
+                        className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-3 py-2.5 text-primary-cafe font-sans"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-primary-cafe hover:bg-primary-container-cafe text-on-primary font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer shadow-sm border-0"
+                    >
+                      Save Owner Changes
+                    </button>
+                  </form>
+                </div>
+
+                {/* Staff Credentials Card */}
+                <div className="bg-surface-container-lowest-cafe border border-outline-cafe/15 rounded-3xl p-6 shadow-sm space-y-6">
+                  <div>
+                    <h3 className="font-display text-base font-bold text-primary-cafe uppercase tracking-wider flex items-center gap-1.5">
+                      <Sliders className="w-5 h-5 text-secondary-cafe" /> Update Staff Credentials
+                    </h3>
+                    <p className="font-sans text-xs text-on-surface-variant-cafe/80 mt-0.5">
+                      Define the username and password details for the unlisted staff dashboard lounge.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleUpdateCredentials} className="space-y-4 text-xs font-sans">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-bold uppercase text-on-surface-variant-cafe">Staff Username</label>
+                      <input
+                        type="text"
+                        required
+                        value={newStaffUsername}
+                        onChange={(e) => setNewStaffUsername(e.target.value)}
+                        className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-3 py-2.5 text-primary-cafe font-sans"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-bold uppercase text-on-surface-variant-cafe">Staff Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={newStaffPassword}
+                        onChange={(e) => setNewStaffPassword(e.target.value)}
+                        className="w-full bg-surface-cafe border border-outline-cafe/15 rounded-xl px-3 py-2.5 text-primary-cafe font-sans"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-primary-cafe hover:bg-primary-container-cafe text-on-primary font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer shadow-sm border-0"
+                    >
+                      Save Staff Changes
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+            )}
+
+            {/* 8. STAFF VIEW (OWNER EYEPORT VIEW) TAB */}
+            {activeTab === 'staff-view' && (
+              <div className="bg-surface-container-lowest-cafe border border-outline-cafe/15 rounded-3xl p-4 md:p-6 shadow-sm space-y-4">
+                <div className="border-b border-outline-cafe/10 pb-4">
+                  <h3 className="font-display text-base font-bold text-primary-cafe uppercase tracking-wider">Owner Eyeport: Staff Workspace view</h3>
+                  <p className="font-sans text-xs text-on-surface-variant-cafe/80 mt-0.5">
+                    This lets you view and edit exactly what is on the staff lounge. Any modifications you make here reflect instantly.
+                  </p>
+                </div>
+                {/* Render PortalView as the staff dashboard */}
+                <PortalView triggerToast={triggerToast} />
               </div>
             )}
 
@@ -1507,14 +1986,14 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
                 <div className="space-y-2">
                   <p className="font-bold text-[10px] uppercase tracking-wider text-primary-cafe">WhatsApp Dispatch Preview (100% Free)</p>
                   <div className="bg-green-50 border border-green-200 text-green-900 rounded-xl p-4 font-mono whitespace-pre-wrap text-[11px] leading-relaxed shadow-inner">
-                    {`☕ *LUNA CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour order (*${notificationModal.code}*) status is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our courtyard soon!`}
+                    {`☕ *LOLA'S CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour order (*${notificationModal.code}*) status is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our courtyard soon!`}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <p className="font-bold text-[10px] uppercase tracking-wider text-primary-cafe">SMS Text Dispatch Preview (100% Free)</p>
                   <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-xl p-4 font-mono whitespace-pre-wrap text-[11px] leading-relaxed shadow-inner">
-                    {`LUNA CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour order (${notificationModal.code}) status is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our courtyard soon!`}
+                    {`LOLA'S CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour order (${notificationModal.code}) status is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our courtyard soon!`}
                   </div>
                 </div>
               </div>
@@ -1522,7 +2001,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
               <div className="pt-2 border-t border-outline-cafe/15 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => {
-                    const textPayload = `☕ *LUNA CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour order (*${notificationModal.code}*) status is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our courtyard soon!`;
+                    const textPayload = `☕ *LOLA'S CAFE ABUJA* ☕\n\nHi *${notificationModal.name}*!\nYour order (*${notificationModal.code}*) status is now: *${notificationModal.status.toUpperCase()}* 🌿\n\n📋 Details: ${notificationModal.details}\n\nSee you in our courtyard soon!`;
                     executeFreeNotification(notificationModal.phone, textPayload, 'whatsapp');
                   }}
                   className="w-full bg-green-700 hover:bg-green-800 text-white font-sans font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 border-0 shadow-sm"
@@ -1531,7 +2010,7 @@ export default function OwnerDashboardView({ onBackToHome, triggerToast }: Owner
                 </button>
                 <button
                   onClick={() => {
-                    const textPayload = `LUNA CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour order (${notificationModal.code}) status is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our courtyard soon!`;
+                    const textPayload = `LOLA'S CAFE ABUJA\n\nHi ${notificationModal.name}!\nYour order (${notificationModal.code}) status is now: ${notificationModal.status.toUpperCase()}.\nDetails: ${notificationModal.details}.\nSee you in our courtyard soon!`;
                     executeFreeNotification(notificationModal.phone, textPayload, 'sms');
                   }}
                   className="w-full bg-primary-cafe hover:bg-primary-container-cafe text-on-primary font-sans font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 border-0 shadow-sm"

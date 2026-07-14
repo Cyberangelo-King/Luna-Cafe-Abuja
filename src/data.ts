@@ -1,157 +1,231 @@
 import { MenuItem, ModifierOption, CommunityEvent } from './types';
 
 export const MENU_ITEMS: MenuItem[] = [
+  // Gourmet Burgers
   {
-    id: 'w1',
-    name: 'Classic Belgian',
-    description: 'Crispy on the outside, fluffy on the inside. Served with whipped butter and pure maple syrup.',
-    price: 4500,
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCqInGEr4putBsouug9KPqudZ4E4XRRntdkujtZyaiwjsElAdN46D9lmuJiiRCci1L0A7o0oQzqZsmPkVApNAnyNrz8-RGPP7C-AzbYvxOmqd5iOs-atvR4VFBqQ7V4l1YLRvq2kwOCIfSUMf9LQ8F5Qb0bx4h9oUcuzRoLF22upVgnXoDkavxorcjzXqxAdRjDaOdHQqZXu_k6gJJzKIKGESF2Vs2A1-r0aMzCCY0JvjaAgzcWvNqThg',
-    category: 'waffles',
-    modifierCategory: 'waffle'
+    id: 'b1',
+    name: "Lola's Double Smash Burger",
+    description: "Two smashed premium beef patties, melted cheddar cheese, caramelized onions, and Lola's secret house burger sauce on a toasted brioche bun.",
+    price: 7500,
+    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80',
+    category: 'burgers',
+    modifierCategory: 'burger'
   },
   {
-    id: 'w2',
-    name: 'Berry Nutella',
-    description: 'Warm Nutella drizzle topped with fresh local strawberries and vanilla bean whipped cream.',
-    price: 6000,
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCCyRL15lLeRPeXUJoh4fzYXMOmz9jtBIxOkKgC6HZejU9eP_W9FjyrQihO1Mma7OUIX28Opg7tp0NSp5BJ7YyIQb83GtnXtdlbUyG3fJGkjWjemlkhEOO0juE1MXNgcuNILI1foX2Hnm9BDKuT1HsG_z-FgtcNq1zOhCfUl2M9FEHOh_pEAl2KrJcEC-cU8ff3JoY3wzM5UmdeeTaaJK7GCiyauSoRUfivFKJ4Tp_g8PuK1DuPy0QkJA',
-    category: 'waffles',
-    modifierCategory: 'waffle'
+    id: 'b2',
+    name: "Fiery Crispy Chicken Burger",
+    description: "Buttermilk fried chicken breast tossed in a hot chili glaze, topped with pickled jalapeños, cooling herb ranch, and shredded lettuce on a toasted sesame bun.",
+    price: 6800,
+    imageUrl: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?auto=format&fit=crop&w=600&q=80',
+    category: 'burgers',
+    modifierCategory: 'burger'
+  },
+
+  // Supreme Pizza
+  {
+    id: 'pz1',
+    name: "Lola's Supreme Pizza",
+    description: "Our signature high-hydration crust topped with loaded mozzarella, premium pepperoni, seasoned minced beef, bell peppers, sweet red onions, and olives.",
+    price: 11500,
+    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80',
+    category: 'pizza',
+    modifierCategory: 'pizza'
   },
   {
-    id: 'p1',
-    name: 'Luna Signature Brunch',
-    description: 'A curated selection of poached eggs, smashed avocado, smoked salmon, roasted tomatoes, and sourdough toast.',
-    price: 12500,
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD_PenHlK-TF2nIX3xB6if-aS8yZUnEaoXKyTP-2kbaZ_E88YBu94uYLjEBFAZwpwhR4A0FqXkdM8SiMWPcFmsq1IKKgWGjzjoIcTAztngb_zdQVgOPV647TUgsW7vJpkcq-ctbqSihoiqMKdHTGpDXOWr5tA3CCDNHAQ1cbGXnuxySqBvv3rnSl1xHL8-sBpGRzYBvUWvg4g-6deM3QZwvRoJ8NJRQqRlW-AEEq3wAQG1ElpnXRncMbQ',
-    category: 'platters',
-    modifierCategory: 'platter'
+    id: 'pz2',
+    name: "Creamy Chicken & Mushroom Pizza",
+    description: "Garlic Alfredo base sauce, tender grilled chicken breast slices, wild button mushrooms, stretchy mozzarella, finished with fresh garden oregano.",
+    price: 12000,
+    imageUrl: 'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?auto=format&fit=crop&w=600&q=80',
+    category: 'pizza',
+    modifierCategory: 'pizza'
   },
+
+  // Corndogs
   {
-    id: 'c1',
-    name: 'The Luna Cortado',
-    description: 'Equal parts espresso and perfectly textured steamed milk. Crafted with our signature Abuja roast for a balanced, nutty finish.',
-    price: 4500,
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCRF4SIEKcrGxZ9l42aYifsTQzNUPdh4jWBnogme0ywKvJTSQlwxX4uGv87Pwj3bBYmNBtox-JUnk3b0nwTXmRdxaak7BYjMjwX8z40eYec-6896b70ih-Q_pTO_94ly-boUM-83kZDQrcdR4NXCq_q2XMpVL7DMcZzbTEtcwScGNkQJJyVZofxJ4qypoEX298a_NugrGncfBFmlIWzPoeQUG_0f62Y_Vd7AYg--EWoXkrCLg0ETnUL6A',
-    category: 'coffee',
-    modifierCategory: 'coffee'
-  },
-  {
-    id: 'c2',
-    name: 'Ceremonial Iced Matcha',
-    description: 'Premium shade-grown matcha whisked to order, served over ice with your choice of oat or whole milk, lightly sweetened with vanilla bean syrup.',
-    price: 5200,
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7KX4OGKUDLMyznHUoDsK7X8jjFEWKUZtmFGoW_k864dLGb46BAjdxLgsM-ZBZdEu415xoqgPTpwkPq2rQlM5lg5zuSLLGGtnqr7bFUvgMXG9zcd_Pt8szYHtESvUAqvH1LqbFCwg9ap44md6Qm15j_Hv9p57A0ldJ4AnZL1NKKtTicTlyffVbYi3gzijAR4tbtJNNSuv128B9a3-3f53ewP_ZvWkMvf95DXlUdl_fweO1qPoh6fc_4g',
-    category: 'coffee',
-    modifierCategory: 'coffee'
-  },
-  {
-    id: 'c3',
-    name: 'Single Origin Pour Over',
-    description: 'A delicate, clean cup brewed manually using the V60 method. Ask our barista about today’s rotating single-origin bean selection.',
-    price: 3800,
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRnKySq-tWGxf50xlmay8hQd_6_YMYBeFO92M0Cyuhb3yl5GaFTkgDmxuHy7KPjxRya0TYK7hfpaoU6XBxi8lnElMe5MInY6XOHzGTCsUXj03beHnAa8V33syV_JaGREGkkUhbmWNd6iFJtoJpxgMdeCK6EXeyMuC-_NBaOFrz1yTaL-jM0zCDfnOAlwOc1AI-k43ISvFJgxKTEylXH5yPPoeIWf6ehyL0-NsK05N356KQs-AmzgEBhA',
-    category: 'coffee',
-    modifierCategory: 'coffee'
-  },
-  {
-    id: 'c4',
-    name: 'Abuja Sunrise Latte',
-    description: 'Our signature espresso blend with steamed micro-foam milk and a hint of local honey and cinnamon.',
+    id: 'cd1',
+    name: "Half & Half Mozzarella Corndog",
+    description: "Half premium beef frankfurter, half gooey block mozzarella, hand-dipped in our sweet golden yeast batter and fried to crunchy, stretchy perfection.",
     price: 3500,
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDpXZPKHKKGR-0I7o4Db4fMUdRIKW2AE36kgP6uvYmDur2iQ-_H67SA3STSNV-ikMKdDcn91JtkuCzmgoChHut_APD4xlSTfNAXno66GMNJYgoAFMZq2ZX-ID1ZefaIn29T4mgJ2thlHBOsvhzl91IOc2hHvzL8vsSQvJB1Qdo83NX2YWcB87bu2R5vWRVBBB7sLb6Pjb3FeqlF8045d93cp7slhl3ECSkhC2BT26e4kNGtlW2es1_Eag',
-    category: 'coffee',
-    modifierCategory: 'coffee'
+    imageUrl: 'https://images.unsplash.com/photo-1623653387945-2fd25214f8fc?auto=format&fit=crop&w=600&q=80',
+    category: 'corndogs',
+    modifierCategory: 'corndog'
+  },
+  {
+    id: 'cd2',
+    name: "Potato Crust Cheese Corndog",
+    description: "Gooey mozzarella and beef frankfurter wrapped in batter studded with crunchy diced potato cubes, fried golden and finished with sweet mayonnaise.",
+    price: 4000,
+    imageUrl: 'https://images.unsplash.com/photo-1596097635121-14b63b7a0c19?auto=format&fit=crop&w=600&q=80',
+    category: 'corndogs',
+    modifierCategory: 'corndog'
+  },
+
+  // Fries & Wings
+  {
+    id: 'fw1',
+    name: "Sticky BBQ Wings & Hand-Cut Fries",
+    description: "6 jumbo crisp-fried wings tossed in our sweet, smoky house BBQ reduction, served alongside rustic hand-cut, sea salt-dusted potato fries.",
+    price: 6200,
+    imageUrl: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=600&q=80',
+    category: 'fries_wings',
+    modifierCategory: 'wings'
+  },
+  {
+    id: 'fw2',
+    name: "Buffalo Hot Wings & Sweet Potato Fries",
+    description: "6 jumbo wings tossed in fiery, authentic cayenne pepper glaze, served with fresh cooling blue cheese dip and crispy sweet potato wedges.",
+    price: 6500,
+    imageUrl: 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?auto=format&fit=crop&w=600&q=80',
+    category: 'fries_wings',
+    modifierCategory: 'wings'
+  },
+
+  // Boba Tea/Drinks
+  {
+    id: 'bb1',
+    name: "Classic Brown Sugar Milk Boba",
+    description: "Caramelized brown sugar syrup tiger-striped around fresh chilled whole milk, rich premium Assam black tea, and slow-cooked warm, chewy tapioca boba pearls.",
+    price: 4800,
+    imageUrl: 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?auto=format&fit=crop&w=600&q=80',
+    category: 'boba_drinks',
+    modifierCategory: 'boba'
+  },
+  {
+    id: 'bb2',
+    name: "Strawberry Matcha Boba Float",
+    description: "A gorgeous layered drink with ceremonial grade Japanese matcha whisked over oat milk, sweet house-made wild strawberry puree, and chewy boba.",
+    price: 5200,
+    imageUrl: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=600&q=80',
+    category: 'boba_drinks',
+    modifierCategory: 'boba'
+  },
+  {
+    id: 'bb3',
+    name: "Lola's Sunset Citrus Refresher",
+    description: "Zesty blood orange, freshly squeezed lime juice, wild garden mint leaves, and cold-brewed Nigerian zobo (hibiscus) served over crushed ice.",
+    price: 3500,
+    imageUrl: 'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=600&q=80',
+    category: 'boba_drinks',
+    modifierCategory: 'boba'
   }
 ];
 
 export const MODIFIER_DATA: Record<string, ModifierOption[]> = {
-  waffle: [
-    { id: 'm1', name: 'Extra Maple Syrup', price: 500, type: 'checkbox' },
-    { id: 'm2', name: 'Add Vanilla Ice Cream', price: 1500, type: 'checkbox' },
-    { id: 'm3', name: 'Extra Fresh Berries', price: 1200, type: 'checkbox' }
+  burger: [
+    { id: 'm1', name: 'Extra Cheddar Cheese Slice', price: 1500, type: 'checkbox' },
+    { id: 'm2', name: 'Add Smoked Turkey Bacon', price: 2000, type: 'checkbox' },
+    { id: 'm3', name: 'Add Double Beef Patty', price: 3500, type: 'checkbox' }
   ],
-  coffee: [
-    { id: 'm4', name: 'Oat Milk Alternative', price: 2000, type: 'radio', group: 'milk' },
-    { id: 'm5', name: 'Almond Milk Alternative', price: 2000, type: 'radio', group: 'milk' },
-    { id: 'm6', name: 'Extra Espresso Shot', price: 1000, type: 'checkbox' }
+  pizza: [
+    { id: 'm4', name: 'Extra Mozzarella Cheese', price: 2000, type: 'checkbox' },
+    { id: 'm5', name: 'Add Extra Pepperoni Slices', price: 1800, type: 'checkbox' },
+    { id: 'm6', name: 'Stuffed Crust (Cheese Filled)', price: 2500, type: 'checkbox' }
   ],
-  platter: [
-    { id: 'm7', name: 'Extra Sourdough Slice', price: 800, type: 'checkbox' },
-    { id: 'm8', name: 'Add Grilled Halloumi', price: 2500, type: 'checkbox' }
+  corndog: [
+    { id: 'm7', name: 'Light Sugar Dust Coating', price: 300, type: 'checkbox' },
+    { id: 'm8', name: 'Drizzle Sweet Condensed Milk', price: 500, type: 'checkbox' },
+    { id: 'm9', name: 'Drizzle House Spicy Mayo', price: 400, type: 'checkbox' }
+  ],
+  wings: [
+    { id: 'm10', name: 'Toss in Extra BBQ Sauce', price: 800, type: 'checkbox' },
+    { id: 'm11', name: 'Upgrade to Cheesy Fries', price: 1800, type: 'checkbox' },
+    { id: 'm12', name: 'Add Extra Ranch Dipping Sauce', price: 600, type: 'checkbox' }
+  ],
+  boba: [
+    { id: 'm13', name: 'Extra Portion Tapioca Boba', price: 1000, type: 'checkbox' },
+    { id: 'm14', name: 'Add Honey Popping Boba', price: 1200, type: 'checkbox' },
+    { id: 'm15', name: 'Sub Oat Milk (Dairy-Free)', price: 1500, type: 'radio', group: 'milk' }
   ]
 };
 
 export const COMMUNITY_EVENTS: CommunityEvent[] = [
   {
     id: 'e1',
-    title: 'Terracotta Paint Night',
+    title: 'Lola\'s Terracotta Paint & Sip',
     category: 'Art & Wine',
-    description: 'Guided canvas painting focusing on earthy palettes, paired with a curated selection of house wines and artisanal cheeses.',
+    description: 'Guided clay planter and canvas painting session with earthy tones, paired with a selection of premium mocktails, wines, and hot corndogs.',
     price: 15000,
     date: 24,
     month: 'Oct',
     day: 'Thursday',
     time: '6:30 PM',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCqTvoHvZmN-G_1uiYCGJI20S5jDj6f9D8TLjTHhBXsdLin1kLapyDz7HZ9OgR_F93nZonX_Z1Q4CmMPhrAOi1At1o2E9IBPIiDqkeNKdun4xKFn4zitQGCFV2IS9RZSi0fnct46DGOqPhHYJ8Ex6nyFOaE97C8LK3VMa8bWInoChjdIH5v6F17apP_FxL8IRnU1CBtcUDSX0LPs31Sqj2zTHDczjV3iHFMMAXJTlJuu8DGOa6TzkYodg',
+    imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=600&q=80',
     isFeatured: true
   },
   {
     id: 'e2',
-    title: 'Courtyard Book Club',
+    title: 'Abraka Courtyard Book Club',
     category: 'Community',
-    description: 'This month we delve into contemporary African literature with "The Girl with the Louding Voice". Coffee and light pastries provided. RSVP required.',
+    description: 'An evening of contemporary literature reviews with young creatives. Savor fresh boba tea and burgers while discussing "The Girl with the Louding Voice".',
     price: 'Free',
     date: 2,
     month: 'Nov',
     day: 'Saturday',
     time: '10:00 AM',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBaH2N5s7jUZKopQc3Ol7Im8C8xqBiyeg5At2cwFLDDgSKYu6tgEzfLEkk05b3xmfFEaQZTGP5f9mH3kdiGNnNumQXeMDn7tJqlBMnrbQc4eoAdJqBr7Lh3y-TKcEmT1PZqSmf1gA1mV95_k97EmJZvBgDkCh0HSjAyWTbA7jkOcqeTn7Dog_oU1cGvZBu0eQBCkUmEckAeldWi5bhya-EXeRvEy_leAB4Md8yJTAQK9dIBtBipc4D7VQ'
+    imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=600&q=80'
   },
   {
     id: 'e3',
-    title: 'Acoustic & Karaoke Night',
+    title: 'Acoustic Soul & Boba Karaoke',
     category: 'Music',
-    description: 'Start the evening with live acoustic sets from local artists, followed by an open mic karaoke session. A lively, communal atmosphere to end the week.',
+    description: 'Live soft acoustic sets from Delta State young vocalists followed by a cozy open-mic session. A yellow-lit, slow-living communal atmosphere to recharge.',
     price: 5000,
     date: 15,
     month: 'Nov',
     day: 'Friday',
     time: '8:00 PM',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCfBiNI0bFNP5fe_p6P25FE6e2J9DP4pOMpgJ_27n3Gl1pSW7lTPCDzyVk4-BUg7CPIk98D-ZQitlsOeIa9ga_HamwvgEZ4NKPxq0TZp9OGWilOZEEMPC8Icw_cmxhbnIKZqiA7CQ2RXZqRam_cnXY_ldVpAHrkLx5AgyrOZK_ROXpsnsdrjTgZ6MjUeoIC9aHg6bsgTenOJUd72tIZPbJyK8JbbvgrajAbJgY4jfZlW9T0QFMJr7K8AQ'
+    imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80'
   }
 ];
 
 export const GALLERY_MOMENTS = [
   {
     id: 'gm1',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-neBpXhDc8i5Skgq1JLTdLNElnz91nym4XDHZflZrIWKWFR6ROKfhQWrm5uP8YIaRV0Q5g4EwIldiOhLyIfi6IIOKv-3M1nuyDuTFmTBGXeuGYxO607Myozj8ecPO1nZXobRLt6pMJQ6WImM13EYctq2V8rKhJQDY_w40ijFjChyEW1uqhkfVZvsHAKo6sVxzxEr_U94yOmDphiq66SO8EzSpSX70BanVHkw9Di8_QqkJskS0Re4Z-A',
-    alt: 'Plated brunch and espresso latte'
+    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80',
+    alt: 'Juicy double smash burgers stacked high',
+    likes: '1.4k',
+    comments: '128',
+    platform: 'instagram'
   },
   {
     id: 'gm2',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAA4O9Y81zAwH4QzUWAlACav3R2-esYD4uisvMH1MyQtQbRvKvHfBS0r1el2r0NjWFRGfS-SxS_dopE0sc52ORb8V2bryPoRifPCWmAYc-XvPLMqWotNBEbtAr_pi44CylxvHQBjGOgZ4wANPhtc0Bmnl14Oiwtr0y4luTJ4G6M5cdWta2l52y0YqeKa9m70CyZ7VTRy08ujXHlqfzb3VUi3WmYwX-8gQwcMVVjhW1cRN75otv7aGtk-A',
-    alt: 'Co-working and typing at cafe desk'
+    imageUrl: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=600&q=80',
+    alt: 'Vibrant layered matcha and strawberry boba float',
+    likes: '2.1k',
+    comments: '345',
+    platform: 'tiktok'
   },
   {
     id: 'gm3',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6WTusAxa1UoySyCxRmiHUJUuvk5oVJH8dRpqWI0cb3Oi01PNly3QqhAZqlLPSDmgeGBZnQSzer2-5CgPj0t9jaM1gap-mL6JMkihSvSMVjKkJ92iLy6ImZo-374-3BhldTLMPOPkF-2odkw24v73thjGODfWP0jZkRSoKbb1m8KsMs-t_aZNUypE1eQuVp-hlF5NZwkNi7ozfGb_nfMSJTdGAuFS_n1J5c6VioHulMtLtfmNJdpfBjg',
-    alt: 'Artisanal coffee on concrete plate with green foliage background'
+    imageUrl: 'https://images.unsplash.com/photo-1623653387945-2fd25214f8fc?auto=format&fit=crop&w=600&q=80',
+    alt: 'Golden, stretchy mozzarella corndog with sugar dust',
+    likes: '982',
+    comments: '76',
+    platform: 'instagram'
   },
   {
     id: 'gm4',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDwJX0Nkb3KEgyXUpI5toHfuA0CQj_NJF9odsbexIFddrTnm8cJx9giv-WOt9IA_aphNg-BY8bSSUfwc8-KXJ36JAZmHMPRmZLkE6mPBlkXVjzeO0lKf-AVrYWpVxjebexdosI2_SACBqL7VHMseUlcBRym62Xk2qfhqLlKZVunaKLETKoYplS2hY_Qlj3GhkoRYB5RGJYFZ-TQQJRKPMyM3hggknKUrWsiqLuB-7wW00nrIo42D03wwQ',
-    alt: 'Arched doorway courtyard community sunset event'
+    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80',
+    alt: 'Freshly baked supreme pizza with a cheesy pull',
+    likes: '1.8k',
+    comments: '201',
+    platform: 'instagram'
   },
   {
     id: 'gm5',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDjfk20AaOejvn1CMA5M9PvTkgZb3zh5BTOodc8Bm68DTg-7be_v1hz2rsF_5lMIhr8H2nXXPGZvYBvjQon-i4YBKJkKNN9BzduNn_PAQkyxtIKI9HARaJNtDWeKUFlBdf0g-YcwhZCozAVMoMR1pHgagQBJcntbZD5s6PRhMG-R2HKBX3z23FxdU89mnEEHvnyJF_sORh67HKXfbCXDrULGSCfqpV0QTHgkgs2YtcVhKI-lpV3mVSlFw',
-    alt: 'Plated organic pastry in morning glow'
+    imageUrl: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=600&q=80',
+    alt: 'Crispy fried chicken wings tossed in BBQ sauce next to hand-cut fries',
+    likes: '3.4k',
+    comments: '582',
+    platform: 'tiktok'
   },
   {
     id: 'gm6',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAehxTqe7cRv4bQP0QLLszTPxeX1Ii5XIMKhq9WZ0f2XNdFPYJ7Q3LhSgNcSwza2wt2P_E8NKk5iQBf4QTMnpQ3QC-ZQQYQQemacj3C1EXg827EOO7avnxi4tLzaS0FcndYYIgBXJqll0JJALupiqWoCKHPtLI99K0oAMl7jSvN97hkXLxYGDkwF3B9vq7h73d7XSuuxiuOIBBzu6AN6CVwMsMJ6DLlx4KNbrBQ0xjb4akLTqdv_YKQ8g',
-    alt: 'Steaming hands wrap around hot ceramic cup'
+    imageUrl: 'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=600&q=80',
+    alt: 'Glistening blood orange and lime botanical refreshers on a sunny terrace',
+    likes: '1.1k',
+    comments: '94',
+    platform: 'instagram'
   }
 ];

@@ -95,7 +95,7 @@ export default function ReservationsView({ onBackToHome, onViewMenu }: Reservati
       return;
     }
     // Generate a random reference
-    const randCode = `LUNA-${Math.floor(1000 + Math.random() * 9000)}`;
+    const randCode = `LOLA-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newRes: Reservation = {
       id: `res-${Date.now()}`,
@@ -434,7 +434,7 @@ export default function ReservationsView({ onBackToHome, onViewMenu }: Reservati
             <button
               onClick={() => setInfoModal({
                 title: "Calendar Connected",
-                desc: `A courtyard appointment for LUNA-${referenceCode} (Oct ${selectedDate} at ${selectedTime}) has been compiled and synced into your local mobile/desktop device calendar.`
+                desc: `A courtyard appointment for LOLA-${referenceCode} (Oct ${selectedDate} at ${selectedTime}) has been compiled and synced into your local mobile/desktop device calendar.`
               })}
               className="bg-primary-container-cafe text-on-primary rounded-lg font-sans font-semibold tracking-wider uppercase text-xs px-6 py-4 flex items-center justify-center gap-2 hover:bg-primary-container-cafe/90 transition-all cursor-pointer shadow-md"
             >

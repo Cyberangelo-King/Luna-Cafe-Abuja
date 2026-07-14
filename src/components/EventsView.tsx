@@ -42,14 +42,14 @@ export default function EventsView({ onBackToHome, triggerToast }: EventsViewPro
     refreshEvents();
     
     // Subscribe to live owner-boardroom changes
-    window.addEventListener('luna_events_updated', refreshEvents);
+    window.addEventListener('lola_events_updated', refreshEvents);
     
     const timer = setTimeout(() => {
       setLoading(false);
     }, 800);
 
     return () => {
-      window.removeEventListener('luna_events_updated', refreshEvents);
+      window.removeEventListener('lola_events_updated', refreshEvents);
       clearTimeout(timer);
     };
   }, []);

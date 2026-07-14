@@ -15,10 +15,17 @@ import EventsView from './components/EventsView';
 import CheckoutView from './components/CheckoutView';
 import PortalView from './components/PortalView';
 import OwnerDashboardView from './components/OwnerDashboardView';
+import LocationModal from './components/LocationModal';
 import { CartItem } from './types';
 import { initializeStorage } from './services/cafeDataService';
 
 export default function App() {
+  const [selectedLocation, setSelectedLocation] = useState<'abraka' | 'lagos' | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lolas_cafe_location') as 'abraka' | 'lagos' | null;
+    }
+    return null;
+  });
   const [currentView, setView] = useState<'home' | 'menu' | 'reservations' | 'events' | 'checkout' | 'portal' | 'owner'>('home');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartSidebarOpen, setCartSidebarOpen] = useState(false);
@@ -26,9 +33,29 @@ export default function App() {
   // Custom non-intrusive Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error'; id: number } | null>(null);
 
-  // Initial seeding on app mount
+  // Initial seeding on app mount and handle unlisted routes
   useEffect(() => {
     initializeStorage();
+
+    const handleUrlRouting = () => {
+      const hash = window.location.hash.toLowerCase();
+      const searchParams = new URLSearchParams(window.location.search);
+      const pageParam = searchParams.get('page')?.toLowerCase();
+
+      if (hash === '#/staff' || hash === '#/portal' || pageParam === 'staff') {
+        setView('portal');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (hash === '#/admin' || hash === '#/boss' || pageParam === 'admin' || pageParam === 'boss') {
+        setView('owner');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (hash === '#/home' || hash === '#/' || pageParam === 'home') {
+        setView('home');
+      }
+    };
+
+    handleUrlRouting();
+    window.addEventListener('hashchange', handleUrlRouting);
+    return () => window.removeEventListener('hashchange', handleUrlRouting);
   }, []);
 
   const triggerToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -87,6 +114,13 @@ export default function App() {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const handleSelectLocation = (loc: 'abraka' | 'lagos') => {
+    setSelectedLocation(loc);
+    localStorage.setItem('lolas_cafe_location', loc);
+    triggerToast(`Welcome to Lola's Cafe - ${loc === 'abraka' ? 'Abraka Hub' : 'Lagos Delivery Hub'}!`, 'success');
+    setView('menu');
+  };
+
   const handleViewChange = (view: 'home' | 'menu' | 'reservations' | 'events' | 'checkout' | 'portal' | 'owner') => {
     setView(view);
     setCartSidebarOpen(false);
@@ -96,12 +130,19 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-cafe text-primary-cafe font-sans selection:bg-secondary-cafe/20 selection:text-secondary-cafe">
       
+      {/* Geolocation forced selection */}
+      {selectedLocation === null && (
+        <LocationModal onSelect={handleSelectLocation} />
+      )}
+
       {/* Universal Sticky Header Navigation */}
       <Header
         currentView={currentView === 'checkout' ? 'menu' : currentView}
         setView={(v) => handleViewChange(v)}
         cartCount={cartCount}
         openCart={() => setCartSidebarOpen(true)}
+        selectedLocation={selectedLocation}
+        onResetLocation={() => setSelectedLocation(null)}
       />
 
       {/* Main Container */}
@@ -142,6 +183,7 @@ export default function App() {
             onOrderSuccess={() => handleViewChange('menu')}
             clearCart={handleClearCart}
             triggerToast={triggerToast}
+            selectedLocation={selectedLocation || 'abraka'}
           />
         )}
 

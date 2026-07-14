@@ -11,9 +11,18 @@ interface HeaderProps {
   setView: (view: 'home' | 'menu' | 'reservations' | 'events' | 'portal') => void;
   cartCount: number;
   openCart: () => void;
+  selectedLocation?: 'abraka' | 'lagos' | null;
+  onResetLocation?: () => void;
 }
 
-export default function Header({ currentView, setView, cartCount, openCart }: HeaderProps) {
+export default function Header({ 
+  currentView, 
+  setView, 
+  cartCount, 
+  openCart,
+  selectedLocation,
+  onResetLocation
+}: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavClick = (view: 'home' | 'menu' | 'reservations' | 'events' | 'portal') => {
@@ -25,28 +34,43 @@ export default function Header({ currentView, setView, cartCount, openCart }: He
     <header className="sticky top-0 z-50 w-full bg-surface-cafe/95 backdrop-blur-md border-b border-outline-cafe/15 transition-all duration-300">
       <div className="flex justify-between items-center w-full px-4 md:px-16 py-4 max-w-7xl mx-auto">
         
-        {/* Brand Logo - Masterfully styled to look like an authentic luxury specialty cafe */}
-        <button
-          onClick={() => handleNavClick('home')}
-          className="flex items-center gap-3 cursor-pointer group text-left focus:outline-none"
-        >
-          <div className="relative w-10 h-10 rounded-full bg-primary-cafe flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-105 shadow-md border border-outline-cafe/15" style={{ boxShadow: '0 4px 12px rgba(38,66,47,0.2)' }}>
-            {/* Elegant Crescent Moon design overlay */}
-            <div className="absolute w-7 h-7 rounded-full border-r-2 border-b-2 border-secondary-container-cafe -rotate-45" />
-            <div className="absolute top-2 right-2 w-1 h-1 bg-secondary-container-cafe rounded-full animate-pulse" />
-            <div className="relative z-10 flex flex-col items-center">
-              <span className="font-display text-sm font-extrabold text-on-primary">L</span>
+        {/* Brand Logo and Location Indicator */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleNavClick('home')}
+            className="flex items-center gap-3 cursor-pointer group text-left focus:outline-none"
+          >
+            <div className="relative w-10 h-10 rounded-full bg-primary-cafe flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-105 shadow-md border border-outline-cafe/15" style={{ boxShadow: '0 4px 12px rgba(38,66,47,0.2)' }}>
+              {/* Elegant Crescent Moon design overlay */}
+              <div className="absolute w-7 h-7 rounded-full border-r-2 border-b-2 border-secondary-container-cafe -rotate-45" />
+              <div className="absolute top-2 right-2 w-1 h-1 bg-secondary-container-cafe rounded-full animate-pulse" />
+              <div className="relative z-10 flex flex-col items-center">
+                <span className="font-display text-sm font-extrabold text-on-primary">L</span>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col">
-            <span className="font-display text-xl md:text-2xl font-black tracking-widest text-primary-cafe leading-none uppercase">
-              Luna
-            </span>
-            <span className="font-sans text-[8px] uppercase tracking-[0.25em] font-extrabold text-secondary-cafe mt-1.5 leading-none">
-              Café &bull; Abuja
-            </span>
-          </div>
-        </button>
+            <div className="flex flex-col">
+              <span className="font-display text-xl md:text-2xl font-black tracking-widest text-primary-cafe leading-none uppercase">
+                Lola
+              </span>
+              <span className="font-sans text-[8px] uppercase tracking-[0.25em] font-extrabold text-secondary-cafe mt-1.5 leading-none">
+                Café &bull; Nigeria
+              </span>
+            </div>
+          </button>
+
+          {/* Dynamic Location Badge */}
+          {selectedLocation && (
+            <button
+              onClick={onResetLocation}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary-cafe/10 hover:bg-secondary-cafe/20 border border-secondary-cafe/15 text-secondary-cafe font-sans text-[9px] uppercase font-bold tracking-wider transition-all duration-200 cursor-pointer shadow-sm ml-2 group"
+              title="Click to switch your location hub"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary-cafe shrink-0 animate-pulse" />
+              <span>📍 {selectedLocation === 'abraka' ? 'Abraka Hub' : 'Lagos Delivery'}</span>
+              <span className="text-[8px] text-on-surface-variant-cafe/50 font-normal lowercase tracking-normal bg-surface-cafe/80 px-1 py-0.5 rounded-md border border-outline-cafe/10 group-hover:text-secondary-cafe group-hover:bg-white transition-all ml-1">&bull; switch</span>
+            </button>
+          )}
+        </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">

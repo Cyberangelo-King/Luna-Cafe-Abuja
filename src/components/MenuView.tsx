@@ -30,7 +30,7 @@ export default function MenuView({
   cartSidebarOpen,
   onCheckout
 }: MenuViewProps) {
-  const [activeCategory, setActiveCategory] = useState<MenuCategory>('waffles');
+  const [activeCategory, setActiveCategory] = useState<MenuCategory>('burgers');
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -46,9 +46,11 @@ export default function MenuView({
   });
 
   const categories: { id: MenuCategory; label: string }[] = [
-    { id: 'waffles', label: 'Waffles' },
-    { id: 'platters', label: 'Platters' },
-    { id: 'coffee', label: 'Artisan Coffee' }
+    { id: 'burgers', label: 'Gourmet Burgers' },
+    { id: 'pizza', label: 'Supreme Pizza' },
+    { id: 'corndogs', label: 'Corndogs' },
+    { id: 'fries_wings', label: 'Fries & Wings' },
+    { id: 'boba_drinks', label: 'Boba Tea & Drinks' }
   ];
 
   // Refresh menu from database
@@ -60,7 +62,7 @@ export default function MenuView({
     refreshMenu();
     
     // Listen to updates from Staff command center
-    window.addEventListener('luna_menu_updated', refreshMenu);
+    window.addEventListener('lola_menu_updated', refreshMenu);
     
     // Skeleton loading simulation to enhance luxury feel
     const timer = setTimeout(() => {
@@ -68,7 +70,7 @@ export default function MenuView({
     }, 800);
 
     return () => {
-      window.removeEventListener('luna_menu_updated', refreshMenu);
+      window.removeEventListener('lola_menu_updated', refreshMenu);
       clearTimeout(timer);
     };
   }, []);
@@ -95,7 +97,7 @@ export default function MenuView({
         // filter out other items belonging to the same group or starting with milk
         const filtered = prev.filter(mod => {
           if (group === 'milk') {
-            return mod.name !== 'Oat Milk Alternative' && mod.name !== 'Almond Milk Alternative';
+            return mod.name !== 'Sub Oat Milk (Dairy-Free)' && mod.name !== 'Oat Milk Alternative' && mod.name !== 'Almond Milk Alternative';
           }
           return true;
         });

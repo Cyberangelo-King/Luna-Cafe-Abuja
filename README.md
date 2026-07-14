@@ -43,50 +43,8 @@ To maintain secure separation of concerns, administrative portals are guarded by
 
 ---
 
-## 🚀 How to Export, Push to GitHub, & Host Live on Netlify
 
-### Step 1: Exporting the Project from Google AI Studio
-1. Locate the **Settings Icon** in the top-right corner of your AI Studio developer workspace.
-2. Select **Export** from the menu.
-3. Choose either:
-   *   **Export to GitHub** (Logs you into GitHub and creates a brand new repository instantly).
-   *   **Download ZIP** (Saves the clean React project folder directly to your computer).
-
-### Step 2: Push code to GitHub manually (Optional)
-If you downloaded the project as a `.zip` file and want to initialize it manually inside Git:
-```bash
-# Extract the folder and open it in your terminal
-cd lolas-cafe-app
-
-# Initialize a new Git repository
-git init
-
-# Stage all files
-git add .
-
-# Commit changes
-git commit -m "feat: initial launch of Lola's Cafe Web Platform"
-
-# Rename default branch to main and link to your remote GitHub repo
-git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/lolas-cafe.git
-
-# Push changes
-git push -u origin main
-```
-
-### Step 3: Hosting live on Netlify (Completely Free)
-Netlify makes deploying Vite + React static single-page apps exceptionally simple:
-
-1. Log in to [Netlify Console](https://www.netlify.com/).
-2. Select **Add new site** ➔ **Import from an existing project**.
-3. Choose **GitHub** as your provider and select the `lolas-cafe` repository.
-4. Set the exact deployment configurations:
-    *   **Base Directory**: `Leave blank` (Root folder)
-    *   **Build Command**: `npm run build`
-    *   **Publish Directory**: `dist`
-5. Click **Deploy site**.
-6. Once the deployment completes, Netlify gives you a generic site URL (e.g. `lolas-cafe.netlify.app`). You can customize this domain or link it to a professional domain registry like `order.lolascafe.ng` in Netlify's **Domain Management** settings.
+Once the deployment completes, Netlify gives you a generic site URL (e.g. `lolas-cafe.netlify.app`). You can customize this domain or link it to a professional domain registry like `order.lolascafe.ng` in Netlify's **Domain Management** settings.
 
 ---
 
